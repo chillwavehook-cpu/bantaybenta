@@ -17,7 +17,7 @@
   <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
   <!-- Babel standalone for JSX transform -->
-  <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.12.9/babel.min.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,6 +47,16 @@
     <div id="splash-icon">🏪</div>
     <div id="splash-text">Bantay Benta</div>
     <div id="splash-sub">Ini-load ang inyong tindahan...</div>
+  <div id="splash-wait" style="display:none;font-size:11px;color:#4f5a72;margin-top:12px;">
+    Unang load — kaunting pasensya lang ☕
+  </div>
+  <script>
+    // Show "wait" message after 3 seconds if still loading
+    setTimeout(function() {
+      var w = document.getElementById('splash-wait');
+      if(w) w.style.display = 'block';
+    }, 3000);
+  </script>
     <div id="splash-loading">
       <div class="dot"></div>
       <div class="dot"></div>
@@ -58,7 +68,7 @@
   <div id="root"></div>
 
   <!-- App code — Babel transforms JSX in browser -->
-    <script type="text/babel">
+    <script type="text/babel" data-presets="react">
 
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
@@ -495,7 +505,7 @@
     }
 
   </script>
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
     // ═══════════════════════════════════════════════ MODALS
     // ── Editable Customer Input with saved names ──────
     function CustomerInput({value, onChange}) {
@@ -838,7 +848,7 @@
     }
 
   </script>
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
     // ═══════════════════════════════════════════════ PAGES (condensed)
     function CashFlowPanel({totalRev,totalExp}) {
       const sp  = DB.getStockPurchases();
@@ -1264,7 +1274,7 @@
 
           {/* TAP 1 — Product grid (ALWAYS visible so you can keep adding) */}
   </script>
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
             {filtered.map(p=>{
               const inCart = cart.filter(i=>i.pid===p.id);
@@ -1866,7 +1876,7 @@
               {active.map(p=>{
                 const sh   = Math.max(0,p.min-p.stock);
   </script>
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
                 const pri  = p.stock===0?"critical":sh>=p.min*0.7?"high":"medium";
                 const mode = getMode(p);
                 const hasTingiOpt = p.unitsPerPack>0;
@@ -2413,7 +2423,7 @@
     }
 
   </script>
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
     // ═══════════════════════════════════════════════ MAIN SHELL
     // ── Daily Summary ──────────────────────────────────
     function DailySummary({sales,expenses}) {
@@ -2676,6 +2686,13 @@
       if(splash) { splash.classList.add('hide'); setTimeout(()=>splash.remove(),500); }
     }, 800);
   
+  </script>
+  <script>
+    if('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function(){});
+      });
+    }
   </script>
 </body>
 </html>
