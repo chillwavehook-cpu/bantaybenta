@@ -13,8 +13,6 @@
   <link rel="manifest" href="/manifest.json" />
 
   <!-- React 18 + ReactDOM from CDN -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
   <!-- Babel standalone for JSX transform -->
   <style>
@@ -37,6 +35,24 @@
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
     @keyframes bounce { 0%,100%{transform:translateY(0);opacity:0.4} 50%{transform:translateY(-6px);opacity:1} }
   </style>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Bantay Benta"/>
+  <link rel="apple-touch-icon" href="/icon.png"/>
+
+  <!-- Service Worker: enables offline use -->
+  <script>
+    if('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(r){ console.log('SW registered'); })
+          .catch(function(e){ console.log('SW failed:', e); });
+      });
+    }
+  </script>
+
 </head>
 <body>
 
