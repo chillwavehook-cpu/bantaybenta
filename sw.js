@@ -1,39 +1,75 @@
-const CACHE = 'bantaybenta-v1';
+// Bantay Benta Service Worker
+// Caches everything on first load → 100% offline after
+
+const CACHE = 'bantaybenta-v21';
 const ASSETS = [
   '/',
   '/index.html',
   'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
-  'https://unpkg.com/@babel/standalone@7.12.9/babel.min.js',
 ];
 
-self.addEventListener('install', e => {
+// Install: cache all assets
+self.addEventListener('install', function(e) {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})
+    caches.open(CACHE).then(function(cache) {
+      console.log('[SW] Caching app for offline use...');
+      return Promise.allSettled(
+        ASSETS.map(url =>
+          cache.add(url).catch(err => console.log('[SW] Failed to cache:', url, err))
+        )
+      );
+    }).then(function() {
+      console.log('[SW] All assets cached!');
+      return self.skipWaiting();
+    })
   );
-  self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
+// Activate: delete old caches
+self.addEventListener('activate', function(e) {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(k => k !== CACHE).map(k => {
+          console.log('[SW] Deleting old cache:', k);
+          return caches.delete(k);
+        })
+      );
+    }).then(function() {
+      return self.clients.claim();
+    })
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
+// Fetch: serve from cache, fallback to network
+self.addEventListener('fetch', function(e) {
+  // Skip non-GET and chrome-extension requests
+  if(e.request.method !== 'GET') return;
+  if(e.request.url.startsWith('chrome-extension://')) return;
+
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if(cached) return cached;
-      return fetch(e.request).then(res => {
-        if(res && res.status === 200 && res.type === 'basic') {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+    caches.match(e.request).then(function(cached) {
+      if(cached) {
+        // Serve from cache (works offline!)
+        return cached;
+      }
+      // Not in cache - try network
+      return fetch(e.request).then(function(response) {
+        // Cache successful responses for future offline use
+        if(response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE).then(function(cache) {
+            cache.put(e.request, clone);
+          });
         }
-        return res;
-      }).catch(() => cached);
+        return response;
+      }).catch(function() {
+        // Network failed + not cached = show offline page
+        if(e.request.destination === 'document') {
+          return caches.match('/index.html');
+        }
+      });
     })
   );
 });
