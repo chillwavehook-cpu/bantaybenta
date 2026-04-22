@@ -6,29 +6,15 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#06080e",
-  "theme_color": "#06080e",
+  "theme_color": "#22d3a0",
   "lang": "tl",
   "icons": [
-    {
-      "src": "/icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src": "/icon.png",    "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
   ],
-  "categories": ["business", "productivity"],
+  "categories": ["business","productivity"],
   "shortcuts": [
-    {
-      "name": "Magbenta",
-      "short_name": "Benta",
-      "url": "/?tab=quicksale",
-      "icons": [{"src": "/icon.png", "sizes": "192x192"}]
-    }
+    {"name":"Quick Sale","short_name":"Magbenta","url":"/?tab=quicksale",
+     "icons":[{"src":"/icon.png","sizes":"192x192"}]}
   ]
 }
