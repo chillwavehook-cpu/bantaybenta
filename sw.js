@@ -1,74 +1,61 @@
-// Bantay Benta Service Worker
-// Caches everything on first load → 100% offline after
+// Bantay Benta — Service Worker v21
+// Serves icons + caches everything for offline use
 
-const CACHE = 'bantaybenta-v21';
-const ASSETS = [
-  '/',
-  '/index.html',
-  'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
-];
+const CACHE = 'bb-v21';
+const ICON_192 = 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAEjElEQVR4nO3dv47cVBjG4RNACCkKKBFlGkSdMh0VDfdCEUoqpJWoKEnBvdCkoqNMjWi2RCCEKBEUkdFoCNn54/OdY7/PcwHjWfv7+XjGu9577773/t8NQr01+g3ASAIgmgCIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiCYAogmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiPbO6Dfw+Mfno98Cg90+fTZs2/dGPRjL4HNsRAjlARh87lIZQulnAMPPKSrnpCwAw885qubFt0BEKwnA2Z9LVMzN8K9B9+jly6+7vO6TJ191ed1k3b8FSjr79xr8Y2kh9PxWyGcAoglgJVVn/+pt7Z0AiCYAogmAaN0DGPmbfmxf7/mxAhCtJACrAJeomBsrANHKArAKcI6qeSldAUTAKSrnpPyX4W6fPmv3HzxqD1/cVG+ayf326U37849fS7dZHsD9B49aa69+2NaaEPh3Flp7NR+VEZT/TfASwN7cfvt26fYef/FX6fYqVQZQ+hlgr8PPuirnxNegRCsLwNmfc1TNixWAaAIgWkkALn+4RMXcWAFWMOJexsMXN+6hrMBjUa4wwwAu7+HwZhKnE8AFZhj8Y0K4TPc7wXu5/j9l6Gd7LtBeYuh5Z9gKcIcZz/ansirczQrwP64Z/FkfjbjVEHquAAI4suUz/qm2FoIACiQM/rGthCCAjhIH/9jsIQigA4P/X7OGIICVGPrTzRSDAK5k8C83QwgCuJDBX8/IEARwJoPfz4gQBHAig1+nMgQB3MHgj1MRggBew9DPp1cMAjhg8Oe3dggCaAZ/i9YKIToAg79914YQHcAlPvnm55/KNxrihy8/+rh6mz0D8EfxRBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQLTIZ4N+//kHv6zxOp999/uHe9/G3lkBiCYAogmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiCYAogmAaAIgmgCI5unQnMXToWFHBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRAtF0+FoV98VgU6EQARBMA0QRANAEQTQBEEwDRBEA0ARBNAETrHkDP29jsX+/5sQIQTQBEEwDRSgLwOYBLVMyNFYBoAiBaWQAugzhH1bxYAYhWGoBVgFNUzokVgGjlAVgFeJPq+bACEG1IAFYBXmfEXFgBiDYsAKsAh0bNw9AVQAS0NnYOhl8CiSDb6OM/PAAYaYoARp8FGGOG4z5FAK3NsTOoM8vxniaA1ubZKfQ103GeKoDW5to5rG+249v9P8Rcw3+X2Y/ZBn8x3QpwaNadxnlmPo5TB9Da3DuPu81+/Ka+BDrmkmg7Zh/8xaYCWAhhXlsZ/MUmA1gIYR5bG/zFpgNYCGGcrQ7+YhcBHBJDf1sf+kO7C+CYIK63p4E/tvsA4E2mvw8APQmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiCYAogmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGj/AAEuZIwtZtlDAAAAAElFTkSuQmCC';
+const ICON_512 = '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IADC1hoAFj9wTGsNAQEQtrYAsPiBU1pbCAiAsLUEgMUPTGktISAAwpYcAJY+MAdLjgEBELbEALD4gTlaYggIgLAlBYDFDyzBkkJAAIQtIQAsfmCJlhACAiBsCQEwN1/949dfRp8BuOmnbz//YvQZlqYcAJ+MPgAAMD0BAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgKBHow8AV/37b3/+z+gzPNRf//Xfv5ziz/Wa3OQ1gcO5AQCAIAEAAEECAACCBAAABAkAAAgSAAAQJAAAIEgAAECQAACAIAEAAEECAACCBAAABAkAAAgSAAAQJAAAIEgAAECQAACAIAEAAEECAACCBAAABAkAAAgSAAAQJAAAIEgAAECQAACAIAEAAEECAACCBAAABAkAAAgSAAAQJAAAIEgAAECQAACAIAEAAEECAACCBAAABAkAAAgSAAAQJAAAIEgAAECQAACAIAEAAEECAACCBAAABAkAAAgSAAAQdPb4yfnF6EOM9PTZ89FHWJyv/vHrL6PPANz007effzH6DEvz9s3r0UcYxg0AAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABA0NnjJ+cXow8x0tNnz0cfAYBB3r55PfoIw7gBAIAgAQAAQQIAAIIEAAAECQAACBIAABAkAAAgSAAAQJAAAIAgAQAAQQIAAIIEAAAECQAACBIAABAkAAAgSAAAQJAAAIAgAQAAQfkAePvm9egjADBAff7nAwAAigQAAAQJAAAIEgAAECQAACBIAABAkADY+FUQgBpzXwAAQJIAAIAgAQAAQQIAAIIEwHt+IASgwbx/RwAAQJAAAIAgAQAAQQLgCt8LAaybOX9JAABAkAAAgCABcI3rIYB1Mt8/JgAAIEgAAECQAACAIAFwC98TAayLuX6TAACAIAFwB7UIsA7m+e0EAAAECQAACBIAW7g2Alg2c/xuAgAAggTAPdQjwDKZ39sJAAAIEgA7UJEAy2Ju308AAECQAACAIAGwI9dJAMtgXu9GAABAkADYg6oEmDdzencCYE8eLoB5Mp/3IwAAIEgAPIDKBJgXc3l/AgAAggTAA6lNgHkwjx9GAABAkAA4gOoEGMscfjgBcCAPH8AY5u9hBAAABAmAI1ChANMydw8nAI7EwwgwDfP2OATAEXkoAU7LnD0eAQAAQQLgyNQpwGmYr8clAE7AQwpwXObq8QmAE/GwAhyHeXoaAgAAggTACalWgMOYo6cjAE7MwwvwMObnaQmACXiIAfZjbp6eAJiIhxlgN+blNATAhDzUANuZk9MRABPzcAPcznyclgAYwEMO8DFzcXoCYBAPO8A75uEYAmAgDz1QZw6OIwAG8/ADVebfWAJgBrwJgBpzbzwBMBPeDECFeTcPAmBGvCmAtTPn5kMAzIw3B7BW5tu8nD1+cn4x+hDc7umz56OPAHAwi3+e3ADMmDcNsHTm2HwJgJnz5gGWyvyaN18BLIivBIAlsPiXwQ3AgnhTAXNnTi2HAFgYby5grsynZfEVwIL5SgCYA4t/mdwALJg3HTCaObRcbgBWwm0AMCWLf/kEwMoIAeCULP71EAArJQSAY7L418fPAKyUNytwLObJOrkBCHAbADyExb9uAiBGDADbWPodAiBKCABXWfw9AiBOCECbxd8lAPiDGIAGS5/NRgBwCyEA62Txc5UA4F6CAJbJwmcbAcBexADMm6XPrgQABxEEMJaFz0MJAI5OFMBpWPYckwBgUuIAtrPkmYoAAIAg/xgQAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgCABAABBAgAAggQAAAQJAAAIEgAAECQAACBIAABAkAAAgKD/AwMUfpvZcHePAAAAAElFTkSuQmCC';
 
-// Install: cache all assets
+function b64toBlob(b64, type) {
+  var bytes = atob(b64), arr = new Uint8Array(bytes.length);
+  for(var i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
+  return new Blob([arr], {type:type});
+}
+
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE).then(function(cache) {
-      console.log('[SW] Caching app for offline use...');
-      return Promise.allSettled(
-        ASSETS.map(url =>
-          cache.add(url).catch(err => console.log('[SW] Failed to cache:', url, err))
-        )
-      );
-    }).then(function() {
-      console.log('[SW] All assets cached!');
-      return self.skipWaiting();
-    })
+      return Promise.allSettled([
+        cache.add('/').catch(function(){}),
+        cache.add('/index.html').catch(function(){}),
+        cache.add('https://unpkg.com/react@18.3.1/umd/react.production.min.js').catch(function(){}),
+        cache.add('https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js').catch(function(){})
+      ]);
+    }).then(function() { return self.skipWaiting(); })
   );
 });
 
-// Activate: delete old caches
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(k => k !== CACHE).map(k => {
-          console.log('[SW] Deleting old cache:', k);
-          return caches.delete(k);
-        })
-      );
-    }).then(function() {
-      return self.clients.claim();
-    })
+      return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));
+    }).then(function() { return self.clients.claim(); })
   );
 });
 
-// Fetch: serve from cache, fallback to network
 self.addEventListener('fetch', function(e) {
-  // Skip non-GET and chrome-extension requests
+  var url = e.request.url;
+  // Serve icons from embedded base64 — no separate file needed!
+  if(url.endsWith('/icon.png') || url.endsWith('/icon-192.png')) {
+    e.respondWith(new Response(b64toBlob(ICON_192,'image/png'), {status:200,headers:{'Content-Type':'image/png'}}));
+    return;
+  }
+  if(url.endsWith('/icon512.png') || url.endsWith('/icon-512.png')) {
+    e.respondWith(new Response(b64toBlob(ICON_512,'image/png'), {status:200,headers:{'Content-Type':'image/png'}}));
+    return;
+  }
   if(e.request.method !== 'GET') return;
-  if(e.request.url.startsWith('chrome-extension://')) return;
-
+  if(url.startsWith('chrome-extension://')) return;
   e.respondWith(
     caches.match(e.request).then(function(cached) {
-      if(cached) {
-        // Serve from cache (works offline!)
-        return cached;
-      }
-      // Not in cache - try network
-      return fetch(e.request).then(function(response) {
-        // Cache successful responses for future offline use
-        if(response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE).then(function(cache) {
-            cache.put(e.request, clone);
-          });
+      if(cached) return cached;
+      return fetch(e.request).then(function(resp) {
+        if(resp && resp.status===200) {
+          var clone=resp.clone();
+          caches.open(CACHE).then(function(c){c.put(e.request,clone);});
         }
-        return response;
+        return resp;
       }).catch(function() {
-        // Network failed + not cached = show offline page
-        if(e.request.destination === 'document') {
-          return caches.match('/index.html');
-        }
+        return caches.match('/index.html');
       });
     })
   );
