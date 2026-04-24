@@ -8,11 +8,10 @@ A simple and practical sari-sari store management app designed to track inventor
 https://your-vercel-link.vercel.app/
 
 📸 Preview
-
 (Add## 📸 Preview
+## 📸 Preview
 
-![App Dashboard](./screenshots/dashboard.png)
-![Inventory Page](./screenshots/inventory.png) );
+![Dashboard](./screenshots/dashboard.jpg) 
 
 ✨ Features
 
