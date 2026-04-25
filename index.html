@@ -493,8 +493,15 @@
         if(!f.name.trim()){alert("Lagyan ng pangalan ng produkto.");return;}
         if(!f.price||+f.price<=0){alert("Lagyan ng selling price.");return;}
         const sku = f.sku.trim()||genSKU(f.name);
-        const data={...f,sku,price:+f.price,cost:+f.cost,stock:+f.stock,min:+f.min,orderQty:+f.orderQty,
-          unitsPerPack:+f.unitsPerPack||0,pricePerUnit:+f.pricePerUnit||0,variants:f.variants||[]};
+        // Convert stock input (packs) to PIECES before saving
+        const upp = +f.unitsPerPack||1; // pieces per pack (e.g. 12 for a case)
+        // If unitsPerPack>1, stock input is in PACKS → convert to pieces
+        // If unitsPerPack<=1 (tingi only), stock input is already in pieces
+        const stockInPieces = upp > 1 ? (+f.stock * upp) : +f.stock;
+        const data={...f,sku,price:+f.price,cost:+f.cost,
+          stock: stockInPieces,  // ALWAYS stored in pieces
+          min:+f.min,orderQty:+f.orderQty,
+          unitsPerPack:upp,pricePerUnit:+f.pricePerUnit||0,variants:f.variants||[]};
         if(mode==="edit") {
           editProduct(data);
         } else {
@@ -504,7 +511,7 @@
             DB.addStockPurchase({
               date: new Date().toISOString().slice(0,10),
               product: f.name,
-              qty: +f.stock,
+              qty: stockInPieces,  // record in pieces
               costPerUnit: +f.cost,
               totalCost: +f.cost * +f.stock,
               note: "Initial stock — "+f.stock+" "+( f.unit||"pcs")+" @ "+P(+f.cost)+" each"
@@ -515,7 +522,7 @@
       };
 
       return (
-        React.createElement(MBase,{title:(mode==="edit"?"✏️ I-edit ang Produkto":"📦 "+t.addProd),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(f.name),onChange:(e=>handleNameChange(e.target.value)),placeholder:"e.g. Marlboro, Bigas 5kg"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SKU (Auto)"),React.createElement("input",{style:({...iSt(),color:C.d2}),value:(f.sku),onChange:(e=>sv("sku",e.target.value)),placeholder:"Auto-generate..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.cat)),React.createElement("select",{style:(iSt()),value:(f.cat),onChange:(e=>sv("cat",e.target.value))},(cats.map(c=>React.createElement("option",{key:(c.id),value:(c.name)},(c.name)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit (per piece)"),React.createElement("select",{style:(iSt()),value:(f.unit||"piraso"),onChange:(e=>sv("unit",e.target.value))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Cost of Capital (₱ per pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),value:(f.cost),onChange:(e=>sv("cost",e.target.value)),placeholder:"e.g. 250"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Presyo ng binili mo (wholesale/puhunan)")),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Stock (bilang ng pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),value:(f.stock),onChange:(e=>sv("stock",e.target.value))}))),(+f.cost>0&&+f.stock>0&&mode==="add"&&(
+        React.createElement(MBase,{title:(mode==="edit"?"✏️ I-edit ang Produkto":"📦 "+t.addProd),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(f.name),onChange:(e=>handleNameChange(e.target.value)),placeholder:"e.g. Marlboro, Bigas 5kg"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SKU (Auto)"),React.createElement("input",{style:({...iSt(),color:C.d2}),value:(f.sku),onChange:(e=>sv("sku",e.target.value)),placeholder:"Auto-generate..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.cat)),React.createElement("select",{style:(iSt()),value:(f.cat),onChange:(e=>sv("cat",e.target.value))},(cats.map(c=>React.createElement("option",{key:(c.id),value:(c.name)},(c.name)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit (per piece)"),React.createElement("select",{style:(iSt()),value:(f.unit||"piraso"),onChange:(e=>sv("unit",e.target.value))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Cost of Capital (₱ per pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),value:(f.cost),onChange:(e=>sv("cost",e.target.value)),placeholder:"e.g. 250"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Presyo ng binili mo (wholesale/puhunan)")),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Stock (bilang ng pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),placeholder:"e.g. 2",value:(f.stock),onChange:(e=>sv("stock",e.target.value))}),React.createElement("div",{style:({fontSize:12,color:C.gr,marginTop:4,fontWeight:700})},(function(){if(+f.stock<=0)return "";if(+f.unitsPerPack>1)return "= "+(+f.stock*(+f.unitsPerPack||1))+" piraso total ("+f.stock+" pack × "+(+f.unitsPerPack||1)+" pcs)";return +f.stock+" piraso";})()))),(+f.cost>0&&+f.stock>0&&mode==="add"&&(
               React.createElement("div",{style:({background:C.ad,border:"1px solid "+C.am,borderRadius:8,padding:"9px 12px",fontSize:12})},React.createElement("span",{style:({color:C.am,fontWeight:700})},"💡 Auto-gastos:"),React.createElement("span",{style:({color:"#fff"})},(P(+f.cost)),"×",(f.stock),"="),React.createElement("span",{style:({color:C.am,fontWeight:800})},(P(+f.cost * +f.stock))),React.createElement("span",{style:({color:C.d2})},"— ilalagay sa Gastos (Puhunan)"))
             )),React.createElement("div",{style:({background:C.bg3,border:"1px solid "+C.bl,borderRadius:10,padding:"12px 14px"})},React.createElement("div",{style:({fontSize:12,fontWeight:800,color:C.bl,marginBottom:10})},"📦 Tingi Setup (Optional) — Para sa per-piece selling"),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Pieces in a Pack"),React.createElement("input",{type:"number",style:(iSt()),value:(f.unitsPerPack),onChange:(e=>sv("unitsPerPack",e.target.value)),placeholder:"e.g. 20 sticks"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Ilan ang piraso sa isang pack?")),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Tingi Price (₱ per",(f.unit||"piraso"),")"),React.createElement("input",{type:"number",style:(iSt()),value:(f.pricePerUnit),onChange:(e=>sv("pricePerUnit",e.target.value)),placeholder:"e.g. ₱15 per stick"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Presyo bawat piraso"))),(hasBreakdown&&(
                 React.createElement("div",{style:({background:C.bg2,borderRadius:8,padding:"12px",display:"flex",flexDirection:"column",gap:5})},React.createElement("div",{style:({fontSize:11,fontWeight:700,color:C.d2,textTransform:"uppercase",marginBottom:4})},"📊 Auto-Compute:"),([
@@ -557,21 +564,72 @@
     }
 
     // ═══════════════════════════════════════════════ PAGES (condensed)
-    function CashFlowPanel({totalRev,totalExp}) {
+    function CashFlowPanel({totalRev,totalExp,expenses}) {
       const sp = DB.getStockPurchases ? DB.getStockPurchases() : [];
-      const cashIn  = totalRev;
+      const cashIn       = totalRev;
       const cashOutStock = sp.reduce((a,s)=>a+(+s.totalCost||0),0);
-      const cashOut = cashOutStock + totalExp;
-      const bal     = cashIn - cashOut;
+      const cashOut      = cashOutStock + totalExp;
+      const bal          = cashIn - cashOut;
+      const [showHist, setShowHist] = useState(false);
       return (
-        React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({background:"linear-gradient(135deg,#071428,#0a1628)",border:"1px solid "+C.bl,borderRadius:12,padding:"14px 16px"})},React.createElement("div",{style:({fontSize:11,fontWeight:700,color:C.d2,marginBottom:10,textTransform:"uppercase"})},"💵 Cash Flow"),([["💰 Cash In",P(cashIn),C.am],["📦 Stock Purchases","−"+P(cashOutStock),C.re],["🧾 Expenses","−"+P(totalExp),C.re]].map(function(row,i){
-              return (
-                React.createElement("div",{key:(i),style:({display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid "+C.b})},React.createElement("span",{style:({fontSize:13,color:C.d2})},(row[0])),React.createElement("span",{style:({fontSize:14,fontWeight:700,color:row[2]})},(row[1])))
+        React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:10}},
+          React.createElement("div",{style:{background:"linear-gradient(135deg,#071428,#0a1628)",border:"1px solid "+C.bl,borderRadius:12,padding:"14px 16px"}},
+            React.createElement("div",{style:{fontSize:11,fontWeight:700,color:C.d2,marginBottom:10,textTransform:"uppercase"}},"💵 Cash Flow"),
+            [["💰 Cash In (Sales)",P(cashIn),C.am],["📦 Stock Purchases","−"+P(cashOutStock),C.re],["🧾 Expenses","−"+P(totalExp),C.re]].map(function(row,i){
+              return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid "+C.b}},
+                React.createElement("span",{style:{fontSize:13,color:C.d2}},row[0]),
+                React.createElement("span",{style:{fontSize:14,fontWeight:700,color:row[2]}},row[1])
               );
-            })),React.createElement("div",{style:({display:"flex",justifyContent:"space-between",paddingTop:8})},React.createElement("span",{style:({fontSize:14,fontWeight:800,color:"#fff"})},"💵 Balance"),React.createElement("span",{style:({fontSize:22,fontWeight:900,color:bal>=0?C.gr:C.re})},(P(bal))))),React.createElement("div",{style:({background:C.bg3,border:"1px solid "+C.b,borderRadius:8,padding:"10px 12px",fontSize:11,color:C.d2,lineHeight:1.7})},"Negative balance = nag-invest ka ng stocks. Ang kita ay nasa Profit tab."))
+            }),
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",paddingTop:8}},
+              React.createElement("span",{style:{fontSize:14,fontWeight:800,color:"#fff"}},"💵 Balance"),
+              React.createElement("span",{style:{fontSize:22,fontWeight:900,color:bal>=0?C.gr:C.re}},P(bal))
+            )
+          ),
+          React.createElement("div",{style:{background:C.bg3,border:"1px solid "+C.b,borderRadius:8,padding:"10px 12px",fontSize:11,color:C.d2}},
+            (function(){
+              if(bal>=0) return "✅ Positive cash flow — mas malaki ang kinikita kaysa gastos.";
+              if(cashOutSP>cashIn && cashIn===0) return "📦 Nag-invest ka ng stocks ngunit wala pang benta.";
+              if(cashOutSP>cashOutExp) return "📦 Malaki ang stock investment — normal ito. Tingnan ang Profit tab para sa tunay na kita.";
+              if(cashOutExp>cashOutSP) return "⚠️ Ang gastos ay mas malaki kaysa kita. Suriin ang mga expenses.";
+              return "📦 Nag-invest ka ng stocks. Ang kita ay nasa Profit tab.";
+            })()
+          ),
+          (expenses&&expenses.length>0)&&React.createElement("div",{style:{background:C.bg2,border:"1px solid "+C.b,borderRadius:10,overflow:"hidden",marginTop:0}},
+            React.createElement("div",{style:{padding:"10px 14px",fontSize:12,fontWeight:700,color:C.d2,textTransform:"uppercase",letterSpacing:"0.5px"}},"🧾 Expense Breakdown"),
+            (expenses||[]).filter(function(e){return e.type!=="Purchased Capital";}).slice().reverse().slice(0,20).map(function(e,i){
+              return React.createElement("div",{key:i,style:{padding:"8px 14px",borderTop:"1px solid "+C.b}},
+                React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                  React.createElement("span",{style:{fontSize:13,color:"#fff",fontWeight:600}},e.type),
+                  React.createElement("span",{style:{fontSize:13,fontWeight:800,color:C.re}},"−"+P(e.amount))
+                ),
+                React.createElement("div",{style:{fontSize:11,color:C.d2,marginTop:1}},e.date+(e.note?" · "+e.note:""))
+              );
+            })
+          ),
+          React.createElement("div",{style:{background:C.bg2,border:"1px solid "+C.b,borderRadius:10,overflow:"hidden"}},
+            React.createElement("button",{onClick:function(){setShowHist(function(v){return !v;});},
+              style:{width:"100%",padding:"10px 14px",background:"transparent",border:"none",color:C.bl,
+                fontWeight:700,fontSize:13,cursor:"pointer",textAlign:"left",
+                display:"flex",justifyContent:"space-between",alignItems:"center"}
+            },React.createElement("span",null,"📋 Stock Purchase History ("+sp.length+")"),React.createElement("span",null,showHist?"▲":"▼")),
+            showHist && sp.length===0 && React.createElement("div",{style:{padding:"16px",textAlign:"center",color:C.d2,fontSize:12}},"Walang stock purchase pa."),
+            showHist && sp.length>0 && React.createElement("div",null,
+              [...sp].reverse().slice(0,30).map(function(s,i){
+                return React.createElement("div",{key:i,style:{padding:"10px 14px",borderTop:"1px solid "+C.b}},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}},
+                    React.createElement("span",{style:{fontSize:13,fontWeight:700,color:"#fff",flex:1}},s.product),
+                    React.createElement("span",{style:{fontSize:13,fontWeight:800,color:C.am,flexShrink:0}},P(s.totalCost))
+                  ),
+                  React.createElement("div",{style:{fontSize:11,color:C.d2}},s.date+" · "+s.qty+" pcs @ "+P(s.costPerUnit)+"/pc"),
+                  s.note && React.createElement("div",{style:{fontSize:11,color:C.d3,marginTop:2,fontStyle:"italic"}},s.note)
+                );
+              })
+            )
+          )
+        )
       );
     }
-
     function DashPage({t,salesData,expenses,products,lowStock,unpaidAll,unpaidAmt,setModal,setTab}) {
       const [detail,   setDetail]   = useState(null);
       const [detailFrom,setDFrom]   = useState("");
@@ -642,16 +700,16 @@
       return (
         React.createElement("div",{style:(colStyle)},React.createElement(DailySummary,{sales:(DB.getAllSales()),expenses:(expenses)}),(products.length===0&&(
             React.createElement("div",{style:({background:"#071428",border:"2px dashed "+C.bl,borderRadius:12,
-              padding:"24px 20px",textAlign:"center"})},React.createElement("div",{style:({fontSize:44,marginBottom:10})},"📦"),React.createElement("div",{style:({fontSize:16,fontWeight:800,color:"#fff",marginBottom:6})},"Wala pang produkto"),React.createElement("div",{style:({fontSize:12,color:C.d2,lineHeight:1.6,marginBottom:16})},"I-add muna ang iyong mga paninda bago makapagbenta!"),React.createElement("button",{onClick:(()=>setTab("inventory")),style:({...bSt(C.bl,"#fff"),padding:"12px 24px",fontSize:14,fontWeight:800,borderRadius:10})},"📦 Pumunta sa Imbentaryo"))
+              padding:"24px 20px",textAlign:"center"})},React.createElement("div",{style:({fontSize:44,marginBottom:10})},"📦"),React.createElement("div",{style:({fontSize:16,fontWeight:800,color:"#fff",marginBottom:6})},"I-manage ang produkto para mas accurate ang kita"),React.createElement("div",{style:({fontSize:12,color:C.d2,lineHeight:1.6,marginBottom:16})},"I-add muna ang iyong mga paninda bago makapagbenta!"),React.createElement("button",{onClick:(()=>setTab("inventory")),style:({...bSt(C.bl,"#fff"),padding:"12px 24px",fontSize:14,fontWeight:800,borderRadius:10})},"📦 Pumunta sa Imbentaryo"))
           )),(lowStock.length>0 &&
             React.createElement("div",{onClick:(()=>setTab("reorder")),style:({background:C.ad,border:"1px solid "+C.am,borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"})},React.createElement("span",{style:({fontSize:22})},"⚠️"),React.createElement("div",{style:({flex:1})},React.createElement("div",{style:({fontSize:13,fontWeight:800,color:C.am})},(lowStock.length),"produkto kulang sa stock!"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Tap para makita ang reorder list")),React.createElement("span",{style:({color:C.am,fontSize:18})},"→"))),(unpaidAll.length>0 &&
-            React.createElement("div",{onClick:(()=>setTab("payments")),style:({background:C.bd,border:"1px solid "+C.bl,borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"})},React.createElement("span",{style:({fontSize:22})},"📋"),React.createElement("div",{style:({flex:1})},React.createElement("div",{style:({fontSize:13,fontWeight:800,color:C.bl})},(unpaidAll.length),"hindi pa bayad —",(P(unpaidAmt))),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Tap para kolektahin ang utang")),React.createElement("span",{style:({color:C.bl,fontSize:18})},"→"))),React.createElement("div",{onClick:(()=>setTab("quicksale")),style:({background:"linear-gradient(135deg,#071f17,#0a2a1e)",border:"2px solid "+C.gr,borderRadius:14,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 4px 20px "+C.gr+"30"})},React.createElement("span",{style:({fontSize:40})},"⚡"),React.createElement("div",{style:({flex:1})},React.createElement("div",{style:({fontSize:22,fontWeight:800,color:C.gr})},"MAGBENTA"),React.createElement("div",{style:({fontSize:12,color:C.d2,marginTop:2})},"Tap produkto → Dami → Done!")),React.createElement("span",{style:({fontSize:28,color:C.gr})},"→")),React.createElement("div",{style:({display:"flex",background:C.bg2,border:"1px solid "+C.b,borderRadius:10,overflow:"hidden"})},([{id:"profit",l:"📊 Profit"},  {id:"cashflow",l:"💵 Cash Flow"}].map((tb,i)=>(
+            React.createElement("div",{onClick:(()=>setTab("payments")),style:({background:C.bd,border:"1px solid "+C.bl,borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"})},React.createElement("span",{style:({fontSize:22})},"📋"),React.createElement("div",{style:({flex:1})},React.createElement("div",{style:({fontSize:13,fontWeight:800,color:C.bl})},(unpaidAll.length),"hindi pa bayad —",(P(unpaidAmt))),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Tap para kolektahin ang utang")),React.createElement("span",{style:({color:C.bl,fontSize:18})},"→"))),React.createElement("div",{onClick:(()=>setTab("quicksale")),style:({background:"linear-gradient(135deg,#071f17,#0a2a1e)",border:"2px solid "+C.gr,borderRadius:14,padding:"18px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,boxShadow:"0 4px 20px "+C.gr+"30"})},React.createElement("span",{style:({fontSize:40})},"⚡"),React.createElement("div",{style:({flex:1})},React.createElement("div",{style:({fontSize:22,fontWeight:800,color:C.gr})},"MAGBENTA"),React.createElement("div",{style:({fontSize:12,color:C.d2,marginTop:2})},"Magbenta agad. Kita in seconds.")),React.createElement("span",{style:({fontSize:28,color:C.gr})},"→")),React.createElement("div",{style:({display:"flex",background:C.bg2,border:"1px solid "+C.b,borderRadius:10,overflow:"hidden"})},([{id:"profit",l:"📊 Profit"},  {id:"cashflow",l:"💵 Cash Flow"}].map((tb,i)=>(
               React.createElement("button",{key:(tb.id),onClick:(()=>setDashTab(tb.id)),style:({flex:1,padding:"10px",background:dashTab===tb.id?C.bg3:"transparent",
                   border:"none",borderBottom:dashTab===tb.id?"2px solid "+(tb.id==="profit"?C.am:C.cy):"2px solid transparent",
                   color:dashTab===tb.id?"#fff":C.d2,fontSize:13,fontWeight:dashTab===tb.id?700:400,cursor:"pointer"})},(tb.l))
             )))),(dashTab==="profit"&&(
             React.createElement(Grid2,null,React.createElement(ClickStatCard,{v:(P(grossProfit)),label:"Gross Profit",sub:("Sales "+P(totalRev)+" − COGS "+P(totalCOGS)),color:(C.am),icon:"💰",onClick:(()=>setDetail("totalRev"))}),React.createElement(ClickStatCard,{v:(P(todayRev)),label:"Benta Ngayon",sub:(todaySales.length+" txn ngayon"),color:(C.cy),icon:"📅",onClick:(()=>setDetail("todaySales"))}),React.createElement(ClickStatCard,{v:(P(netProfit)),label:"Net Profit",sub:(netProfit>=0?"Gross − Expenses":"⚠️ Lugi"),color:(netProfit>=0?C.gr:C.re),icon:"📈",onClick:(()=>setDetail("profit"))}),React.createElement(ClickStatCard,{v:(P(unpaidAmt)),label:"Utang",sub:(unpaidAll.length+" pending"),color:(C.re),icon:"⚠️",onClick:(()=>setDetail("unpaid"))}))
-          )),(dashTab==="cashflow"&&React.createElement(CashFlowPanel,{totalRev:(totalRev),totalExp:(totalExp)})),React.createElement(Card,{title:("📋 "+t.recSales),right:(React.createElement("button",{style:{...gBtn(),fontSize:11},onClick:()=>setTab("sales")},"Lahat →"))},React.createElement(Tbl,{cols:([t.cust,t.date,t.total,t.status]),rows:([...salesData.items].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(s=>[
+          ,(function(){const allS=allSales;const totalAll=allS.reduce((a,s)=>a+(s.items||[]).reduce((b,it)=>b+(+it.price*+it.qty),0),0);const collected=allS.filter(s=>s.paid).reduce((a,s)=>a+(s.items||[]).reduce((b,it)=>b+(+it.price*+it.qty),0),0);const outstanding=totalAll-collected;if(totalAll===0)return null;return React.createElement("div",{style:{background:C.bg2,border:"1px solid "+C.b,borderRadius:10,overflow:"hidden"}},React.createElement("div",{style:{padding:"10px 14px",fontSize:11,fontWeight:700,color:C.d2,textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"1px solid "+C.b}},"📊 Sales vs Cash Collected"),[["Total Sales (paid+utang)",P(totalAll),"#fff"],["Cash Collected (paid)",P(collected),C.gr],["Outstanding (utang)",P(outstanding),outstanding>0?C.re:C.d2]].map(function(row,i){return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 14px",borderTop:"1px solid "+C.b}},React.createElement("span",{style:{fontSize:12,color:C.d2}},row[0]),React.createElement("span",{style:{fontSize:13,fontWeight:700,color:row[2]}},row[1]));}));})())),(dashTab==="cashflow"&&React.createElement(CashFlowPanel,{totalRev:(totalRev),totalExp:(totalExp),expenses:(expenses)})),React.createElement(Card,{title:("📋 "+t.recSales),right:(React.createElement("button",{style:{...gBtn(),fontSize:11},onClick:()=>setTab("sales")},"Lahat →"))},React.createElement(Tbl,{cols:([t.cust,t.date,t.total,t.status]),rows:([...salesData.items].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(s=>[
               React.createElement(B,null,(s.cust)),
               React.createElement("span",{style:({fontSize:11,background:C.bg3,padding:"2px 6px",borderRadius:4,color:C.d2})},(s.date)),
               React.createElement("span",{style:({color:C.am,fontWeight:800,fontSize:14})},(P(s.total))),
@@ -705,6 +763,8 @@
       const filtered = useMemo(()=>{
         // Show ALL products — zero stock shown with warning
         let list = [...products];
+        // Only show products with a selling price set
+        list = list.filter(p=>+p.price>0||+p.pricePerUnit>0);
         if(selCat!=="all") list = list.filter(p=>p.cat===selCat);
         if(search.trim()) list = list.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())||(p.sku&&p.sku.toLowerCase()).includes(search.toLowerCase()));
         // Sort: in-stock first, out-of-stock last
@@ -719,30 +779,50 @@
 
       // TAP 1 — select product
       const tapProduct = p => {
+        if(p.stock<=0){
+          alert("⛔ "+p.name+" — WALA nang stock!\nPaki-restock muna bago ibenta.");
+          return;
+        }
         setSelProd(p);
         setSelMode(null);
-        setSelVar(p.variants?.[0]||"");
+        setSelVar((p.variants&&p.variants[0])||"");
         setCustomQty("1");
       };
 
       // TAP 2a — choose whole or tingi
       const tapMode = mode => setSelMode(mode);
 
-      // TAP 2b — add to cart
+      // TAP 2b — add to cart (with proper stock validation)
       const addToCart = (qty, price, label) => {
-        if(selProd.stock<=0) {
-          if(!window.confirm("⚠️ Wala nang stock ang "+selProd.name+"! Ituloy pa rin?")) return;
+        const isTingi  = selMode === "tingi";
+        const upp      = +selProd.unitsPerPack || 1;
+        // piecesNeeded: tingi = qty pieces, pack = qty × pieces-per-pack
+        const piecesNeeded = isTingi ? qty : qty * upp;
+        const available    = selProd.stock; // always in pieces
+
+        // HARD BLOCK: not enough stock
+        if(piecesNeeded > available) {
+          const avail_display = isTingi
+            ? available + " " + (selProd.unit||"piraso")
+            : Math.floor(available / upp) + " pack (" + available + " piraso)";
+          alert("⛔ Hindi sapat ang stock!\n\nKailangan: " + piecesNeeded + " piraso\nMayroon:  " + available + " piraso (" + avail_display + ")\n\nPaki-restock muna ang " + selProd.name + ".");
+          return;
         }
+
         const cartItem = {
-          pid: selProd.id,
-          name: selProd.name + (selVar?" - "+selVar:"") + (label?" ("+label+")":""),
-          qty: qty,
-          price: price,
-          unit: label||selProd.unit||"piraso"
+          pid:       selProd.id,
+          name:      selProd.name + (selVar?" - "+selVar:"") + (label?" ("+label+")":""),
+          qty:       qty,          // display qty (e.g. 2 packs)
+          piecesQty: piecesNeeded, // actual pieces to deduct from stock
+          price:     price,
+          unit:      label||selProd.unit||"piraso",
+          isTingi:   isTingi,
         };
         setCart(c=>{
           const ex = c.find(i=>i.pid===selProd.id&&i.name===cartItem.name);
-          return ex ? c.map(i=>i.name===cartItem.name?{...i,qty:i.qty+qty}:i) : [...c,cartItem];
+          return ex
+            ? c.map(i=>i.name===cartItem.name?{...i,qty:i.qty+qty,piecesQty:(i.piecesQty||i.qty)+piecesNeeded}:i)
+            : [...c,cartItem];
         });
         setSelProd(null);
         setSelMode(null);
@@ -751,17 +831,50 @@
 
       // Update qty in cart
       const updateCartQty = (name, newQty) => {
-        if(newQty<=0) setCart(c=>c.filter(i=>i.name!==name));
-        else setCart(c=>c.map(i=>i.name===name?{...i,qty:newQty}:i));
+        if(newQty<=0){ setCart(c=>c.filter(i=>i.name!==name)); return; }
+        // ── Stock check BEFORE setCart ──────────────────────
+        const cartSnap = cart; // read current cart directly (not inside setter)
+        const item = cartSnap.find(i=>i.name===name);
+        if(item){
+          const prod = products.find(p=>p.id===item.pid||p.id===Number(item.pid));
+          if(prod){
+            const upp          = +prod.unitsPerPack||1;
+            const piecesNeeded = item.isTingi ? newQty : newQty * upp;
+            if(piecesNeeded > prod.stock){
+              const avail = item.isTingi
+                ? prod.stock+" "+(prod.unit||"piraso")
+                : Math.floor(prod.stock/upp)+" pack ("+prod.stock+" piraso)";
+              alert("⛔ Hindi sapat ang stock ng "+prod.name+"!\n\nKailangan: "+piecesNeeded+" piraso\nMayroon:  "+prod.stock+" piraso ("+avail+")\n\nHindi maitutuloy ang transaksyon.");
+              return; // ← EXIT before setCart ever runs
+            }
+            // All good — update qty + piecesQty together
+            const finalPieces = item.isTingi ? newQty : newQty * upp;
+            setCart(c=>c.map(i=>i.name===name?{...i,qty:newQty,piecesQty:finalPieces}:i));
+            return;
+          }
+        }
+        // fallback (no product found — just update qty)
+        setCart(c=>c.map(i=>i.name===name?{...i,qty:newQty}:i));
       };
 
       // TAP 3 — confirm sale
       const confirmSale = () => {
         if(!cart.length) return;
+        // Double-check stock one more time before saving
+        for(var ci=0;ci<cart.length;ci++){
+          var ci_item = cart[ci];
+          var ci_prod = products.find(function(p){return p.id===ci_item.pid;});
+          if(!ci_prod) continue;
+          var needed   = ci_item.piecesQty || ci_item.qty;
+          if(needed > ci_prod.stock){
+            alert("⛔ Hindi na sapat ang stock ng "+ci_prod.name+"!\nMayroon: "+ci_prod.stock+" piraso\nKailangan: "+needed+" piraso");
+            return;
+          }
+        }
         addSale({
           date: td(),
           cust: cust.trim()||"Walk-in",
-          items: cart.map(i=>({pid:i.pid,name:i.name,qty:i.qty,price:i.price,unit:i.unit})),
+          items: cart.map(i=>({pid:i.pid,name:i.name,qty:i.qty,piecesQty:i.piecesQty||i.qty,price:i.price,unit:i.unit,isTingi:i.isTingi})),
           total: cartTotal,
           paid: isPaid,
           method
@@ -789,7 +902,7 @@
               return (
                 React.createElement("button",{key:(p.id),onClick:(()=>tapProduct(p)),style:({background:p.stock<=0?C.rd:isSelected?C.gd:cartQty>0?"#22d3a010":C.bg2,
                     border:"2px solid "+(p.stock<=0?C.re:isSelected?C.gr:cartQty>0?C.gr+"80":C.b),
-                    borderRadius:10,padding:"12px",cursor:"pointer",textAlign:"left",position:"relative",transition:"all 0.1s",opacity:p.stock<=0?0.7:1})},(cartQty>0 && React.createElement("div",{style:({position:"absolute",top:6,right:6,background:C.gr,color:"#000",borderRadius:20,fontSize:10,fontWeight:800,padding:"1px 7px"})},"×",(cartQty))),(p.stock<=0 && React.createElement("div",{style:({background:C.re,color:"#fff",borderRadius:5,fontSize:9,fontWeight:800,padding:"2px 7px",display:"inline-block",marginBottom:4})},"❌ WALA NA")),React.createElement("div",{style:({fontSize:13,fontWeight:700,color:p.stock<=0?"#999":"#fff",lineHeight:1.3,marginBottom:3})},(p.name)),((p.variants&&p.variants.length)>0 && React.createElement("div",{style:({fontSize:10,color:C.pu,marginBottom:2})},(p.variants.length),"variants")),React.createElement("div",{style:({fontSize:16,fontWeight:800,color:p.stock<=0?C.d3:C.gr})},(P(p.price))),(hasTingi(p) && React.createElement("div",{style:({fontSize:10,color:C.am,marginTop:2})},"Tingi:",(P(p.pricePerUnit)),"/",(p.unit||"pc"))),React.createElement("div",{style:({fontSize:10,color:p.stock<=0?C.re:C.d2,fontWeight:p.stock<=0?700:400,marginTop:2})},(p.stock<=0 ? "Out of Stock — pwede pa ring ibenta" : "Stock: "+p.stock)))
+                    borderRadius:10,padding:"12px",cursor:"pointer",textAlign:"left",position:"relative",transition:"all 0.1s",opacity:p.stock<=0?0.7:1})},(cartQty>0 && React.createElement("div",{style:({position:"absolute",top:6,right:6,background:C.gr,color:"#000",borderRadius:20,fontSize:10,fontWeight:800,padding:"1px 7px"})},"×",(cartQty))),(p.stock<=0 && React.createElement("div",{style:({background:C.re,color:"#fff",borderRadius:5,fontSize:9,fontWeight:800,padding:"2px 7px",display:"inline-block",marginBottom:4})},"❌ WALA NA")),React.createElement("div",{style:({fontSize:13,fontWeight:700,color:p.stock<=0?"#999":"#fff",lineHeight:1.3,marginBottom:3})},(p.name)),((p.variants&&p.variants.length)>0 && React.createElement("div",{style:({fontSize:10,color:C.pu,marginBottom:2})},(p.variants.length),"variants")),React.createElement("div",{style:({fontSize:16,fontWeight:800,color:p.stock<=0?C.d3:C.gr})},(P(p.price))),(hasTingi(p) && React.createElement("div",{style:({fontSize:10,color:C.am,marginTop:2})},"Tingi:",(P(p.pricePerUnit)),"/",(p.unit||"pc"))),React.createElement("div",{style:({fontSize:13,color:p.stock<=0?C.re:p.stock<=(p.min||5)?C.am:C.gr,fontWeight:700,marginTop:2})},(p.stock<=0 ? "Out of Stock — mag-restock muna" : "📦 "+p.stock+" "+(p.unit||"piraso")+(p.unitsPerPack>1&&p.stock>0?" ("+Math.floor(p.stock/(p.unitsPerPack||1))+" pack)":""))))
               );
             })),(filtered.length===0 && React.createElement("div",{style:({gridColumn:"1/-1",padding:"32px",textAlign:"center",color:C.d2})},"Walang produkto na nahanap."))),(step==="mode" && selProd && (
             React.createElement("div",{style:({background:C.bg2,border:"2px solid "+C.gr,borderRadius:12,padding:"16px",position:"sticky",bottom:0})},React.createElement("div",{style:({display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10})},React.createElement("div",{style:({fontSize:15,fontWeight:800,color:"#fff"})},(selProd.name)),React.createElement("button",{onClick:(()=>setSelProd(null)),style:({background:"none",border:"none",color:C.re,fontSize:22,cursor:"pointer"})},"×")),((selProd.variants&&selProd.variants.length)>0 && (
@@ -806,13 +919,13 @@
                   React.createElement("button",{onClick:(()=>tapMode("whole")),style:({padding:"14px",borderRadius:10,border:"1px solid "+C.b2,background:C.bg3,color:C.d2,fontSize:12,cursor:"pointer"})},"(Walang tingi setup)")
                 ))))
           )),(step==="qty" && selProd && selMode && (
-            React.createElement("div",{style:({background:C.bg2,border:"2px solid "+(selMode==="tingi"?C.am:C.bl),borderRadius:12,padding:"16px",position:"sticky",bottom:0})},React.createElement("div",{style:({display:"flex",justifyContent:"space-between",marginBottom:6})},React.createElement("div",null,React.createElement("div",{style:({fontSize:14,fontWeight:800,color:"#fff"})},(selProd.name),(selVar?" — "+selVar:"")),React.createElement("div",{style:({fontSize:13,color:selMode==="tingi"?C.am:C.bl,fontWeight:700})},(selMode==="tingi"?`${P(selProd.pricePerUnit)} bawat ${selProd.unit||"piraso"}`:`${P(selProd.price)} buo`))),React.createElement("button",{onClick:(()=>setSelMode(null)),style:({background:"none",border:"none",color:C.d2,fontSize:18,cursor:"pointer"})},"←")),React.createElement("div",{style:({fontSize:11,fontWeight:700,color:C.d2,marginBottom:8,textTransform:"uppercase"})},"Ilang",(selMode==="tingi"?(selProd.unit||"piraso"):getPackLabel(selProd)),"?"),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12})},([1,2,3,4,5,6,10,12].map(q=>(
+            React.createElement("div",{style:({background:C.bg2,border:"2px solid "+(selMode==="tingi"?C.am:C.bl),borderRadius:12,padding:"16px",position:"sticky",bottom:0})},React.createElement("div",{style:({display:"flex",justifyContent:"space-between",marginBottom:6})},React.createElement("div",null,React.createElement("div",{style:({fontSize:14,fontWeight:800,color:"#fff"})},(selProd.name),(selVar?" — "+selVar:"")),React.createElement("div",{style:({fontSize:13,color:selMode==="tingi"?C.am:C.bl,fontWeight:700})},(selMode==="tingi"?`${P(selProd.pricePerUnit)} bawat ${selProd.unit||"piraso"}`:`${P(selProd.price)} buo`))),React.createElement("div",{style:({background:C.bg3,borderRadius:8,padding:"8px 12px",marginBottom:4,display:"flex",justifyContent:"space-between",alignItems:"center"})},React.createElement("span",{style:({fontSize:12,color:C.d2})},"📦 Stock na natitira:"),React.createElement("span",{style:({fontSize:16,fontWeight:900,color:selProd&&selProd.stock<=0?C.re:selProd&&selProd.stock<=5?C.am:C.gr})},(selProd?(selProd.stock+" "+(selProd.unit||"piraso")+(selProd.unitsPerPack>1?" ("+Math.floor(selProd.stock/(selProd.unitsPerPack||1))+" pack)":"")):""))),React.createElement("button",{onClick:(()=>setSelMode(null)),style:({background:"none",border:"none",color:C.d2,fontSize:18,cursor:"pointer"})},"←")),React.createElement("div",{style:({fontSize:11,fontWeight:700,color:C.d2,marginBottom:8,textTransform:"uppercase"})},"Ilang",(selMode==="tingi"?(selProd.unit||"piraso"):getPackLabel(selProd)),"?"),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12})},([1,2,3,4,5,6,10,12].map(q=>(
                   React.createElement("button",{key:(q),onClick:(()=>addToCart(q,
                       selMode==="tingi" ? selProd.pricePerUnit
                         : (selProd.unitsPerPack>0&&selProd.pricePerUnit>0 ? selProd.unitsPerPack*selProd.pricePerUnit : selProd.price),
                       selMode==="tingi" ? selProd.unit : null)),style:({padding:"14px 6px",borderRadius:10,border:"1px solid "+C.b2,
                       background:C.bg3,color:"#fff",fontSize:20,fontWeight:800,cursor:"pointer"})},(q))
-                )))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("input",{type:"number",min:"1",placeholder:"Custom dami...",style:({...iSt(),flex:1,fontSize:16}),value:(customQty),onChange:(e=>setCustomQty(e.target.value)),onKeyDown:(e=>{if(e.key==="Enter"&&+customQty>0){
+                )))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("input",{type:"number",min:"1",max:(selProd&&selMode?(selMode==="tingi"?selProd.stock:Math.floor(selProd.stock/(selProd.unitsPerPack||1))):9999),placeholder:"Custom dami...",style:({...iSt(),flex:1,fontSize:16}),value:(customQty),onChange:(e=>setCustomQty(e.target.value)),onKeyDown:(e=>{if(e.key==="Enter"&&+customQty>0){
                       const wp=selProd.unitsPerPack>0&&selProd.pricePerUnit>0?selProd.unitsPerPack*selProd.pricePerUnit:selProd.price;
                       addToCart(+customQty,selMode==="tingi"?selProd.pricePerUnit:wp,selMode==="tingi"?selProd.unit:null);
                     }})}),React.createElement("button",{onClick:(()=>{if(+customQty>0){const wp=selProd.unitsPerPack>0&&selProd.pricePerUnit>0?selProd.unitsPerPack*selProd.pricePerUnit:selProd.price;addToCart(+customQty,selMode==="tingi"?selProd.pricePerUnit:wp,selMode==="tingi"?selProd.unit:null);}}),style:({...bSt(selMode==="tingi"?C.am:C.bl,"#fff"),padding:"10px 16px",fontSize:14})},"+ Dagdag")))
@@ -949,7 +1062,7 @@
       const [orderMode,   setOrderMode]   = useState({}); // {pid: "pack"|"tingi"}
       const [customQty,   setCustomQty]   = useState({});
       const [showAddCustom,setShowAddCustom] = useState(false);
-      const [customItem,  setCustomItem]  = useState({name:"",qty:"",cost:"",unit:"piraso",addToInv:true});
+      const [customItem,  setCustomItem]  = useState({name:"",qty:"",cost:"",srp:"",unit:"piraso",addToInv:true});
       const [customDone,  setCustomDone]  = useState([]);
 
       const getMode   = (p) => orderMode[p.id] || "pack";
@@ -962,13 +1075,12 @@
         if(!rawQty||rawQty<=0) return;
 
         // Convert to pieces depending on mode
-        const piecesAdded = mode==="tingi" ? rawQty : rawQty * (p.unitsPerPack||1);
-        const costPerPiece = p.unitsPerPack>0 ? +p.cost/+p.unitsPerPack : +p.cost;
-        const totalCost = mode==="tingi"
-          ? costPerPiece * rawQty
-          : +p.cost * rawQty; // cost per pack × packs
+        const upp          = +p.piecesPerBuyingUnit || +p.unitsPerPack || 1;
+        const piecesAdded  = mode==="tingi" ? rawQty : rawQty * upp;
+        const costPerPiece = upp>1 ? +p.cost/upp : +p.cost;
+        const totalCost    = mode==="tingi" ? costPerPiece*rawQty : +p.cost*rawQty;
 
-        adjStock(p.id, piecesAdded);
+        adjStock(p.id, piecesAdded); // always add in PIECES
 
         // Record as Stock Purchase (not expense)
         if(p.cost>0) {
@@ -990,13 +1102,20 @@
         if(!customItem.name||!customItem.cost) return alert("Lagyan ng pangalan at halaga.");
         const amt = +customItem.cost;
         const qty = +customItem.qty||1;
-        addExpense({date:new Date().toISOString().slice(0,10),type:"Puhunan/Iba pa",amount:amt,note:customItem.name+" ("+qty+" "+customItem.unit+")"});
+        const srp = +customItem.srp||0;
+        const costPer = amt/Math.max(1,qty);
         if(customItem.addToInv) {
+          if(srp<=0){ alert("⚠️ Lagyan ng Selling Price (SRP) para maibenta sa Quick Sale!"); return; }
           addProduct({
             name:customItem.name,sku:customItem.name.slice(0,3).toUpperCase()+"-"+Date.now().toString(36).slice(-3),
-            cat:"Iba pa",price:0,cost:amt/Math.max(1,qty),stock:qty,min:1,orderQty:qty,unit:customItem.unit,
+            cat:"Iba pa",price:srp,cost:costPer,stock:qty,min:1,orderQty:qty,unit:customItem.unit,
             variants:[],unitsPerPack:0,pricePerUnit:0
           });
+          // Record as stock purchase (not expense) to avoid double-counting
+          DB.addStockPurchase({date:new Date().toISOString().slice(0,10),product:customItem.name,qty:qty,costPerUnit:costPer,totalCost:amt,note:"Reorder: "+qty+" "+customItem.unit});
+        } else {
+          // Not adding to inventory → record as operating expense
+          addExpense({date:new Date().toISOString().slice(0,10),type:"Puhunan/Iba pa",amount:amt,note:customItem.name+" ("+qty+" "+customItem.unit+")"});
         }
         setCustomDone(d=>[...d,customItem.name+" ("+P(amt)+")"]);
         setCustomItem({name:"",qty:"",cost:"",unit:"piraso",addToInv:true});
@@ -1008,7 +1127,7 @@
 
       return (
         React.createElement("div",{style:(colStyle)},React.createElement(BackBtn,{setTab:(setTab)}),React.createElement("div",{style:({background:C.bg2,border:"1px solid "+C.bl,borderRadius:10,overflow:"hidden"})},React.createElement("div",{style:({padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"})},React.createElement("div",null,React.createElement("div",{style:({fontSize:13,fontWeight:700,color:"#fff"})},"➕ Dagdag na Binibili"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Hindi pa nasa listahan (Gasul, Ice, etc.)")),React.createElement("button",{style:({...bSt(C.bl,"#fff"),fontSize:12}),onClick:(()=>setShowAddCustom(o=>!o))},(showAddCustom?"✕ Isara":"+ Dagdag"))),(showAddCustom&&(
-              React.createElement("div",{style:({padding:"12px 14px",borderTop:"1px solid "+C.b,display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(customItem.name),onChange:(e=>setCustomItem(p=>({...p,name:e.target.value}))),placeholder:"e.g. Gasul, Ice..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Dami"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.qty),onChange:(e=>setCustomItem(p=>({...p,qty:e.target.value}))),placeholder:"1"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit"),React.createElement("select",{style:(iSt()),value:(customItem.unit),onChange:(e=>setCustomItem(p=>({...p,unit:e.target.value})))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Halaga / Gastos (₱) *"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.cost),onChange:(e=>setCustomItem(p=>({...p,cost:e.target.value}))),placeholder:"e.g. 850"}))),React.createElement("div",{style:({display:"flex",alignItems:"center",gap:10,background:C.bg3,borderRadius:8,padding:"10px 12px",cursor:"pointer"}),onClick:(()=>setCustomItem(p=>({...p,addToInv:!p.addToInv})))},React.createElement("div",{style:({width:20,height:20,borderRadius:4,border:"2px solid "+(customItem.addToInv?C.gr:C.b2),background:customItem.addToInv?C.gr:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0})},(customItem.addToInv&&React.createElement("span",{style:({color:"#000",fontSize:13,fontWeight:800})},"✓"))),React.createElement("div",null,React.createElement("div",{style:({fontSize:12,fontWeight:700,color:"#fff"})},"Idagdag sa Inventory"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Para maibenta sa Quick Sale"))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(()=>setShowAddCustom(false))},"Cancel"),React.createElement("button",{style:({...bSt(C.gr,"#000"),flex:2}),onClick:(handleAddCustom)},"✅ I-Record")))
+              React.createElement("div",{style:({padding:"12px 14px",borderTop:"1px solid "+C.b,display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(customItem.name),onChange:(e=>setCustomItem(p=>({...p,name:e.target.value}))),placeholder:"e.g. Gasul, Ice..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Dami"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.qty),onChange:(e=>setCustomItem(p=>({...p,qty:e.target.value}))),placeholder:"1"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit"),React.createElement("select",{style:(iSt()),value:(customItem.unit),onChange:(e=>setCustomItem(p=>({...p,unit:e.target.value})))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Halaga / Gastos (₱) *"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.cost),onChange:(e=>setCustomItem(p=>({...p,cost:e.target.value}))),placeholder:"e.g. 850"}))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SELLING PRICE / SRP (₱)"),React.createElement("input",{type:"number",min:"0",placeholder:"Presyo sa customer (e.g. 1200)",style:(iSt()),value:(customItem.srp||""),onChange:(e=>setCustomItem(c=>({...c,srp:e.target.value})))}),React.createElement("div",{style:({fontSize:11,color:C.d2,marginTop:3})},(customItem.addToInv?"* Kailangan para maibenta sa Quick Sale":"Iwanan kung hindi para ibenta."))),React.createElement("div",{style:({display:"flex",alignItems:"center",gap:10,background:C.bg3,borderRadius:8,padding:"10px 12px",cursor:"pointer"}),onClick:(()=>setCustomItem(p=>({...p,addToInv:!p.addToInv})))},React.createElement("div",{style:({width:20,height:20,borderRadius:4,border:"2px solid "+(customItem.addToInv?C.gr:C.b2),background:customItem.addToInv?C.gr:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0})},(customItem.addToInv&&React.createElement("span",{style:({color:"#000",fontSize:13,fontWeight:800})},"✓"))),React.createElement("div",null,React.createElement("div",{style:({fontSize:12,fontWeight:700,color:"#fff"})},"Idagdag sa Inventory"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Para maibenta sa Quick Sale"))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(()=>setShowAddCustom(false))},"Cancel"),React.createElement("button",{style:({...bSt(C.gr,"#000"),flex:2}),onClick:(handleAddCustom)},"✅ I-Record")))
             ))),(customDone.length>0&&customDone.map((d,i)=>(
             React.createElement("div",{key:(i),style:({background:C.gd,border:"1px solid "+C.gr+"40",borderRadius:8,padding:"8px 12px",fontSize:12,color:C.gr})},"✅",(d))
           ))),(active.length===0&&lowStock.length>0 ? (
@@ -1294,9 +1413,9 @@
       const refreshSales=useCallback((page=0)=>{setSalesPage(page);setSalesData(DB.getSalesPage(page));},[]);
       const lowStock=useMemo(()=>products.filter(p=>p.stock<=p.min),[products]);
       const unpaidAll=useMemo(()=>DB.getAllSales().filter(s=>!s.paid),[salesData]);
-      const unpaidAmt=useMemo(()=>unpaidAll.reduce((a,s)=>a+s.total,0),[unpaidAll]);
+      const unpaidAmt=useMemo(()=>unpaidAll.reduce((a,s)=>a+(s.total-(s.partialPaid||0)),0),[unpaidAll]);
       const toast = useToast();
-      const addSale=s=>{const ns={...s,id:uid()};DB.addSale(ns);s.items.forEach(it=>setProducts(p=>p.map(pr=>pr.id===it.pid?{...pr,stock:Math.max(0,pr.stock-it.qty)}:pr)));refreshSales(0);};
+      const addSale=s=>{const ns={...s,id:uid()};DB.addSale(ns);s.items.forEach(it=>setProducts(p=>p.map(pr=>{if(pr.id!==it.pid&&pr.id!==Number(it.pid))return pr;const deduct=(it.piecesQty!=null&&it.piecesQty!==undefined)?+it.piecesQty:+it.qty;return {...pr,stock:Math.max(0,pr.stock-deduct)};})));refreshSales(0);};
       const markPaid=id=>{
         DB.updateSale(id,{paid:true});
         refreshSales(salesPage);
