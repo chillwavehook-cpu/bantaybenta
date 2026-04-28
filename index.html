@@ -43,7 +43,7 @@
   <link rel="apple-touch-icon" href="/icon.png"/>
   <link rel="icon" type="image/png" href="/icon.png"/>
 
-  <!-- Service Worker: enables offline use -->
+  <!-- Service Worker -->
   <script>
     if('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
@@ -79,13 +79,6 @@
 
   <script>
 // Bantay Benta v4 — Pre-compiled (no Babel in browser!)
-// Guard: check React loaded
-try {
-if(!window.React || !window.ReactDOM) {
-  document.getElementById('splash-sub').textContent = 'Error: Hindi ma-load ang React. Kailangan ng internet sa unang bukas.';
-  document.getElementById('splash-sub').style.color = '#ff6b6b';
-  document.getElementById('splash-sub').style.fontSize = '14px';
-} else {
 (function(React, ReactDOM) {
   "use strict";
   var useState    = React.useState;
@@ -190,16 +183,24 @@ if(!window.React || !window.ReactDOM) {
     const SEED_EXP      = [];
 
     // ═══════════════════════════════════════════════ HELPERS
-    // Input sanitization — strips HTML tags, limits length
-    const sanitizeText = (v, max) => {
-      if(v == null) return "";
-      return String(v).replace(/<[^>]*>/g,"").replace(/[<>]/g,"").replace(/\s+/g," ").trim().slice(0, max||500);
+        // ── Input Sanitization ──────────────────────────────────────
+    const sanitizeText = (val, maxLen) => {
+      if(val == null) return "";
+      // Strip HTML tags to prevent XSS
+      var s = String(val).replace(/<[^>]*>/g, "").replace(/[<>"'`]/g, "");
+      // Normalize whitespace
+      s = s.replace(/\s+/g, " ").trim();
+      return maxLen ? s.slice(0, maxLen) : s.slice(0, 500);
     };
-    const sanitizeName = (v) => sanitizeText(v, 100);
-    const sanitizeNote = (v) => sanitizeText(v, 300);
-    const sanitizePin  = (v) => String(v||"").replace(/[^0-9]/g,"").slice(0,4);
+    const sanitizeNum = (val) => {
+      var n = parseFloat(String(val).replace(/[^0-9.-]/g, ""));
+      return isNaN(n) ? "" : n;
+    };
+    const sanitizeNote = (val) => sanitizeText(val, 300);
+    const sanitizeName = (val) => sanitizeText(val, 100);
+    const sanitizePin  = (val) => String(val).replace(/[^0-9]/g, "").slice(0, 4);
 
-        const P   = n => "₱"+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+    const P   = n => "₱"+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
     const td  = ()  => new Date().toISOString().slice(0,10);
     const wk  = ()  => { const d=new Date(); d.setDate(d.getDate()-d.getDay()); return d.toISOString().slice(0,10); };
     const mo  = ()  => new Date().toISOString().slice(0,7)+"-01";
@@ -442,7 +443,7 @@ if(!window.React || !window.ReactDOM) {
         DB.set("cust_names",updated);
       };
       return (
-        React.createElement("div",{style:({position:"relative"})},React.createElement("div",{style:({display:"flex",gap:6})},React.createElement("input",{style:({...iSt(),flex:1}),placeholder:"Pangalan ng customer (optional)",value:(value),onChange:(e=>{onChange(e.target.value);setShow(true);}),onFocus:(()=>setShow(true)),onBlur:(()=>setTimeout(()=>setShow(false),200))}),(value.trim()&&!saved.includes(value.trim())&&(
+        React.createElement("div",{style:({position:"relative"})},React.createElement("div",{style:({display:"flex",gap:6})},React.createElement("input",{style:({...iSt(),flex:1}),placeholder:"Pangalan ng customer (optional)",value:(value),onChange:(e=>{onChange(sanitizeName(e.target.value));setShow(true);}),onFocus:(()=>setShow(true)),onBlur:(()=>setTimeout(()=>setShow(false),200))}),(value.trim()&&!saved.includes(value.trim())&&(
               React.createElement("button",{onMouseDown:(saveNew),style:({...gBtn(),fontSize:11,flexShrink:0,color:C.gr,border:"1px solid "+C.gr})},"💾 Save")
             ))),(show&&(saved.length>0||filtered.length>0)&&(
             React.createElement("div",{style:({position:"absolute",top:"100%",left:0,right:0,background:C.bg2,
@@ -468,7 +469,7 @@ if(!window.React || !window.ReactDOM) {
         addSale({cust,date,items:si,total,paid:isPaid,method});onClose();
       };
       return (
-        React.createElement(MBase,{title:("💰 "+t.newSale),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.cust)),React.createElement(CustomerInput,{value:(cust),onChange:(setCust)})),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.date)),React.createElement("input",{type:"date",style:(iSt()),value:(date),onChange:(e=>setDate(e.target.value))})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.method)),React.createElement("select",{style:(iSt()),value:(method),onChange:(e=>setMethod(e.target.value))},(["Cash","GCash","PayMaya","Utang"].map(m=>React.createElement("option",{key:(m)},(m))))))),React.createElement("div",null,React.createElement("div",{style:({display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6})},React.createElement("label",{style:(lbSt)},(t.prod)),React.createElement("button",{style:({...gBtn(),fontSize:11}),onClick:(()=>setItems(p=>[...p,{pid:(products[0]&&products[0].id),qty:1}]))},"+ Dagdag")),(items.map((it,i)=>{
+        React.createElement(MBase,{title:("💰 "+t.newSale),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.cust)),React.createElement(CustomerInput,{value:(cust),onChange:(setCust)})),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.date)),React.createElement("input",{type:"date",style:(iSt()),value:(date),onChange:(e=>setDate(e.target.value))})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.method)),React.createElement("select",{style:(iSt()),value:(method),onChange:(e=>setMethod(sanitizeName(e.target.value)))},(["Cash","GCash","PayMaya","Utang"].map(m=>React.createElement("option",{key:(m)},(m))))))),React.createElement("div",null,React.createElement("div",{style:({display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6})},React.createElement("label",{style:(lbSt)},(t.prod)),React.createElement("button",{style:({...gBtn(),fontSize:11}),onClick:(()=>setItems(p=>[...p,{pid:(products[0]&&products[0].id),qty:1}]))},"+ Dagdag")),(items.map((it,i)=>{
                 const p=products.find(x=>x.id===Number(it.pid)||x.id===it.pid);
                 return (
                   React.createElement("div",{key:(i),style:({display:"flex",gap:6,marginBottom:6,alignItems:"center"})},React.createElement("select",{style:({...iSt(),flex:2}),value:(it.pid),onChange:(e=>upd(i,"pid",e.target.value))},(products.map(p=>React.createElement("option",{key:(p.id),value:(p.id)},(p.name),(P(p.price)))))),React.createElement("div",{style:({display:"flex",alignItems:"center",gap:3,flex:"none"})},React.createElement("button",{style:({background:C.bg3,border:"1px solid "+C.b2,borderRadius:5,width:26,height:34,color:"#fff",cursor:"pointer",fontSize:16,flexShrink:0}),onClick:(()=>upd(i,"qty",Math.max(1,it.qty-1)))},"−"),React.createElement("input",{type:"number",min:"1",style:({...iSt(),width:46,textAlign:"center",padding:"4px",fontSize:14}),value:(it.qty),onChange:(e=>upd(i,"qty",e.target.value))}),React.createElement("button",{style:({background:C.bl,border:"none",borderRadius:5,width:26,height:34,color:"#fff",cursor:"pointer",fontSize:16,flexShrink:0}),onClick:(()=>upd(i,"qty",it.qty+1))},"+")),React.createElement("span",{style:({color:C.gr,fontWeight:700,minWidth:52,textAlign:"right",fontSize:12})},(p?P(p.price*it.qty):"—")),(items.length>1 && React.createElement("button",{style:({...gBtn(),color:C.re,padding:"4px 8px"}),onClick:(()=>setItems(p=>p.filter((_,x)=>x!==i)))},"✕")))
@@ -485,7 +486,11 @@ if(!window.React || !window.ReactDOM) {
       };
       const blank={name:"",sku:"",cat:(cats[0]&&cats[0].name)||"Pagkain",price:"",cost:"",stock:"",min:10,orderQty:30,unit:"piraso",unitsPerPack:"",pricePerUnit:"",variants:[]};
       const [f,setF]=useState(mode==="edit"?{...existing,unitsPerPack:existing.unitsPerPack||"",pricePerUnit:existing.pricePerUnit||"",variants:existing.variants||[]}:blank);
-      const sv=(k,v)=>{var tf=["name","sku","cat","unit","buyingUnit","packType","note"];setF(p=>({...p,[k]:tf.includes(k)?sanitizeName(v):v}));};
+      const sv=(k,v)=>{
+        var textFields=["name","sku","note","cat","unit","buyingUnit","packType"];
+        var clean=textFields.includes(k)?sanitizeName(v):v;
+        setF(p=>({...p,[k]:clean}));
+      };
 
       // Auto-generate SKU when name changes
       const handleNameChange=(val)=>{
@@ -508,7 +513,7 @@ if(!window.React || !window.ReactDOM) {
       const save=()=>{
         if(!f.name.trim()){alert("Lagyan ng pangalan ng produkto.");return;}
         if(!f.price||+f.price<=0){alert("Lagyan ng selling price.");return;}
-        const sku = f.sku.trim()||genSKU(f.name);
+        const sku = sanitizeName(f.sku||genSKU(f.name)).replace(/\s+/g,"-").toUpperCase().slice(0,20);
         // Convert stock input (packs) to PIECES before saving
         const upp = +f.unitsPerPack||1; // pieces per pack (e.g. 12 for a case)
         // If unitsPerPack>1, stock input is in PACKS → convert to pieces
@@ -538,7 +543,7 @@ if(!window.React || !window.ReactDOM) {
       };
 
       return (
-        React.createElement(MBase,{title:(mode==="edit"?"✏️ I-edit ang Produkto":"📦 "+t.addProd),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(f.name),onChange:(e=>handleNameChange(e.target.value)),placeholder:"e.g. Marlboro, Bigas 5kg"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SKU (Auto)"),React.createElement("input",{style:({...iSt(),color:C.d2}),value:(f.sku),onChange:(e=>sv("sku",e.target.value)),placeholder:"Auto-generate..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.cat)),React.createElement("select",{style:(iSt()),value:(f.cat),onChange:(e=>sv("cat",e.target.value))},(cats.map(c=>React.createElement("option",{key:(c.id),value:(c.name)},(c.name)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit (per piece)"),React.createElement("select",{style:(iSt()),value:(f.unit||"piraso"),onChange:(e=>sv("unit",e.target.value))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Cost of Capital (₱ per pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),value:(f.cost),onChange:(e=>sv("cost",e.target.value)),placeholder:"e.g. 250"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Presyo ng binili mo (wholesale/puhunan)")),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Stock (bilang ng pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),placeholder:"e.g. 2",value:(f.stock),onChange:(e=>sv("stock",e.target.value))}),React.createElement("div",{style:({fontSize:12,color:C.gr,marginTop:4,fontWeight:700})},(function(){if(+f.stock<=0)return "";if(+f.unitsPerPack>1)return "= "+(+f.stock*(+f.unitsPerPack||1))+" piraso total ("+f.stock+" pack × "+(+f.unitsPerPack||1)+" pcs)";return +f.stock+" piraso";})()))),(+f.cost>0&&+f.stock>0&&mode==="add"&&(
+        React.createElement(MBase,{title:(mode==="edit"?"✏️ I-edit ang Produkto":"📦 "+t.addProd),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(f.name),onChange:(e=>handleNameChange(sanitizeName(e.target.value))),placeholder:"e.g. Marlboro, Bigas 5kg"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SKU (Auto)"),React.createElement("input",{style:({...iSt(),color:C.d2}),value:(f.sku),onChange:(e=>sv("sku",e.target.value)),placeholder:"Auto-generate..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.cat)),React.createElement("select",{style:(iSt()),value:(f.cat),onChange:(e=>sv("cat",e.target.value))},(cats.map(c=>React.createElement("option",{key:(c.id),value:(c.name)},(c.name)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit (per piece)"),React.createElement("select",{style:(iSt()),value:(f.unit||"piraso"),onChange:(e=>sv("unit",e.target.value))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Cost of Capital (₱ per pack/unit)"),React.createElement("input",{type:"number",style:(iSt()),value:(f.cost),onChange:(e=>sv("cost",e.target.value)),placeholder:"e.g. 250"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Presyo ng binili mo (wholesale/puhunan)")),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(+f.unitsPerPack>1?"Stock (bilang ng PACK — e.g. 2 cases)":"Stock (bilang ng piraso)")),React.createElement("input",{type:"number",style:(iSt()),placeholder:"e.g. 2",value:(f.stock),onChange:(e=>sv("stock",e.target.value))}),React.createElement("div",{style:({fontSize:12,color:C.gr,marginTop:4,fontWeight:700})},(function(){if(+f.stock<=0)return "";if(+f.unitsPerPack>1)return "= "+(+f.stock*(+f.unitsPerPack||1))+" piraso total ("+f.stock+" pack × "+(+f.unitsPerPack||1)+" pcs)";return +f.stock+" piraso";})()))),(+f.cost>0&&+f.stock>0&&mode==="add"&&(
               React.createElement("div",{style:({background:C.ad,border:"1px solid "+C.am,borderRadius:8,padding:"9px 12px",fontSize:12})},React.createElement("span",{style:({color:C.am,fontWeight:700})},"💡 Auto-gastos:"),React.createElement("span",{style:({color:"#fff"})},(P(+f.cost)),"×",(f.stock),"="),React.createElement("span",{style:({color:C.am,fontWeight:800})},(P(+f.cost * +f.stock))),React.createElement("span",{style:({color:C.d2})},"— ilalagay sa Gastos (Puhunan)"))
             )),React.createElement("div",{style:({background:C.bg3,border:"1px solid "+C.bl,borderRadius:10,padding:"12px 14px"})},React.createElement("div",{style:({fontSize:12,fontWeight:800,color:C.bl,marginBottom:10})},"📦 Tingi Setup (Optional) — Para sa per-piece selling"),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Pieces in a Pack"),React.createElement("input",{type:"number",style:(iSt()),value:(f.unitsPerPack),onChange:(e=>sv("unitsPerPack",e.target.value)),placeholder:"e.g. 20 sticks"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Ilan ang piraso sa isang pack?")),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Tingi Price (₱ per",(f.unit||"piraso"),")"),React.createElement("input",{type:"number",style:(iSt()),value:(f.pricePerUnit),onChange:(e=>sv("pricePerUnit",e.target.value)),placeholder:"e.g. ₱15 per stick"}),React.createElement("div",{style:({fontSize:10,color:C.d2,marginTop:3})},"Presyo bawat piraso"))),(hasBreakdown&&(
                 React.createElement("div",{style:({background:C.bg2,borderRadius:8,padding:"12px",display:"flex",flexDirection:"column",gap:5})},React.createElement("div",{style:({fontSize:11,fontWeight:700,color:C.d2,textTransform:"uppercase",marginBottom:4})},"📊 Auto-Compute:"),([
@@ -572,7 +577,7 @@ if(!window.React || !window.ReactDOM) {
     function ExpModal({t,addExpense,onClose}) {
       const types=["Upa/Rent","Kuryente","Tubig","Sahod","Ice","Load","Transportasyon","Iba pa"];
       const [f,setF]=useState({date:td(),type:types[0],amount:"",note:""});
-      const s=(k,v)=>setF(p=>({...p,[k]:v}));
+      const s=(k,v)=>{var tf=["type","note"];setF(f=>({...f,[k]:tf.includes(k)?sanitizeName(v):v}));};
       const save=()=>{if(!f.amount||+f.amount<=0){alert("Lagyan ng halaga.");return;}addExpense({...f,amount:+f.amount});onClose();};
       return (
         React.createElement(MBase,{title:("🧾 "+t.addExp),onClose:(onClose)},React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.date)),React.createElement("input",{type:"date",style:(iSt()),value:(f.date),onChange:(e=>s("date",e.target.value))})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Uri"),React.createElement("select",{style:(iSt()),value:(f.type),onChange:(e=>s("type",e.target.value))},(types.map(tp=>React.createElement("option",{key:(tp)},(tp)))))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.amt),"(₱)"),React.createElement("input",{type:"number",style:(iSt()),value:(f.amount),onChange:(e=>s("amount",e.target.value)),placeholder:"0.00"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},(t.note)),React.createElement("input",{style:(iSt()),value:(f.note),onChange:(e=>s("note",e.target.value)),placeholder:"Opsyonal..."})),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(onClose)},(t.cancel)),React.createElement("button",{style:({...bSt(),flex:2}),onClick:(save)},(t.save)))))
@@ -605,9 +610,9 @@ if(!window.React || !window.ReactDOM) {
           React.createElement("div",{style:{background:C.bg3,border:"1px solid "+C.b,borderRadius:8,padding:"10px 12px",fontSize:11,color:C.d2}},
             (function(){
               if(bal>=0) return "✅ Positive cash flow — mas malaki ang kinikita kaysa gastos.";
-              if(cashOutSP>cashIn && cashIn===0) return "📦 Nag-invest ka ng stocks ngunit wala pang benta.";
-              if(cashOutSP>totalExp) return "📦 Malaki ang stock investment — normal ito. Tingnan ang Profit tab para sa tunay na kita.";
-              if(totalExp>cashOutSP) return "⚠️ Ang gastos ay mas malaki kaysa kita. Suriin ang mga expenses.";
+              if(cashOutStock>cashIn && cashIn===0) return "📦 Nag-invest ka ng stocks ngunit wala pang benta.";
+              if(cashOutStock>cashOutExp) return "📦 Malaki ang stock investment — normal ito. Tingnan ang Profit tab para sa tunay na kita.";
+              if(cashOutExp>cashOutStock) return "⚠️ Ang gastos ay mas malaki kaysa kita. Suriin ang mga expenses.";
               return "📦 Nag-invest ka ng stocks. Ang kita ay nasa Profit tab.";
             })()
           ),
@@ -941,14 +946,14 @@ if(!window.React || !window.ReactDOM) {
                         : (selProd.unitsPerPack>0&&selProd.pricePerUnit>0 ? selProd.unitsPerPack*selProd.pricePerUnit : selProd.price),
                       selMode==="tingi" ? selProd.unit : null)),style:({padding:"14px 6px",borderRadius:10,border:"1px solid "+C.b2,
                       background:C.bg3,color:"#fff",fontSize:20,fontWeight:800,cursor:"pointer"})},(q))
-                )))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("input",{type:"number",min:"1",max:(selProd&&selMode?(selMode==="tingi"?selProd.stock:Math.floor(selProd.stock/(selProd.unitsPerPack||1))):9999),placeholder:"Custom dami...",style:({...iSt(),flex:1,fontSize:16}),value:(customQty),onChange:(e=>setCustomQty(e.target.value)),onKeyDown:(e=>{if(e.key==="Enter"&&+customQty>0){
+                )))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("input",{type:"number",min:"1",max:(selProd&&selMode?(selMode==="tingi"?selProd.stock:Math.floor(selProd.stock/(selProd.unitsPerPack||1))):9999),placeholder:"Custom dami...",style:({...iSt(),flex:1,fontSize:16}),value:(customQty),onChange:(e=>setCustomQty(String(+e.target.value||""))),onKeyDown:(e=>{if(e.key==="Enter"&&+customQty>0){
                       const wp=selProd.unitsPerPack>0&&selProd.pricePerUnit>0?selProd.unitsPerPack*selProd.pricePerUnit:selProd.price;
                       addToCart(+customQty,selMode==="tingi"?selProd.pricePerUnit:wp,selMode==="tingi"?selProd.unit:null);
                     }})}),React.createElement("button",{onClick:(()=>{if(+customQty>0){const wp=selProd.unitsPerPack>0&&selProd.pricePerUnit>0?selProd.unitsPerPack*selProd.pricePerUnit:selProd.price;addToCart(+customQty,selMode==="tingi"?selProd.pricePerUnit:wp,selMode==="tingi"?selProd.unit:null);}}),style:({...bSt(selMode==="tingi"?C.am:C.bl,"#fff"),padding:"10px 16px",fontSize:14})},"+ Dagdag")))
           )),(cart.length>0 && (
             React.createElement("div",{style:({background:C.bg2,border:"1px solid "+C.b,borderRadius:12,overflow:"hidden"})},React.createElement("div",{style:({padding:"10px 14px",borderBottom:"1px solid "+C.b,display:"flex",justifyContent:"space-between",alignItems:"center"})},React.createElement("span",{style:({fontSize:13,fontWeight:700,color:"#fff"})},"🛒 Cart (",(cart.reduce((a,i)=>a+i.qty,0)),"items)"),React.createElement("span",{style:({fontSize:16,fontWeight:800,color:C.am})},(P(cartTotal)))),(cart.map(i=>(
                 React.createElement(CartItem,{key:(i.name),item:(i),onUpdate:(updateCartQty)})
-              ))),React.createElement("div",{style:({padding:"12px 14px",display:"flex",flexDirection:"column",gap:8})},React.createElement(CustomerInput,{value:(cust),onChange:(setCust)}),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:8})},React.createElement("select",{style:(iSt()),value:(method),onChange:(e=>setMethod(e.target.value))},(["Cash","GCash","PayMaya","Utang"].map(m=>React.createElement("option",{key:(m)},(m))))),React.createElement("select",{style:(iSt()),value:(isPaid?"paid":"utang"),onChange:(e=>setIsPaid(e.target.value==="paid"))},React.createElement("option",{value:"paid"},"✓ Bayad"),React.createElement("option",{value:"utang"},"Utang"))),React.createElement("button",{onClick:(confirmSale),style:({...bSt(C.gr,"#000"),width:"100%",justifyContent:"center",padding:"16px",fontSize:16,fontWeight:800,borderRadius:10})},"✅ IBENTA —",React.createElement("span",{style:({color:"#000",fontWeight:900})},(P(cartTotal))))))
+              ))),React.createElement("div",{style:({padding:"12px 14px",display:"flex",flexDirection:"column",gap:8})},React.createElement(CustomerInput,{value:(cust),onChange:(setCust)}),React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:8})},React.createElement("select",{style:(iSt()),value:(method),onChange:(e=>setMethod(sanitizeName(e.target.value)))},(["Cash","GCash","PayMaya","Utang"].map(m=>React.createElement("option",{key:(m)},(m))))),React.createElement("select",{style:(iSt()),value:(isPaid?"paid":"utang"),onChange:(e=>setIsPaid(e.target.value==="paid"))},React.createElement("option",{value:"paid"},"✓ Bayad"),React.createElement("option",{value:"utang"},"Utang"))),React.createElement("button",{onClick:(confirmSale),style:({...bSt(C.gr,"#000"),width:"100%",justifyContent:"center",padding:"16px",fontSize:16,fontWeight:800,borderRadius:10})},"✅ IBENTA —",React.createElement("span",{style:({color:"#000",fontWeight:900})},(P(cartTotal))))))
           )))
       );
     }
@@ -1023,7 +1028,7 @@ if(!window.React || !window.ReactDOM) {
                       )),(!s.paid&&(
                         React.createElement("div",{style:({display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:13,fontWeight:700})},React.createElement("span",{style:({color:"#fff"})},"Natitirang Bayad"),React.createElement("span",{style:({color:C.re})},(P(remaining))))
                       )),(!s.paid&&(
-                        React.createElement("div",{style:({marginTop:12,display:"flex",flexDirection:"column",gap:8})},React.createElement("button",{onClick:(()=>togglePaid(s.id,true)),style:({...bSt(C.gr,"#000"),width:"100%",justifyContent:"center",padding:"12px",fontSize:14,fontWeight:800})},"✅ BAYAD NA —",(P(remaining))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("input",{type:"number",placeholder:("Partial na bayad (max "+P(remaining)+")"),style:({...iSt(),flex:1}),value:(partialAmt),onChange:(e=>setPartialAmt(e.target.value))}),React.createElement("button",{onClick:(()=>handlePartial(s)),style:({...bSt(C.am,"#000"),padding:"10px 14px",fontSize:12,fontWeight:700})},"Partial")))
+                        React.createElement("div",{style:({marginTop:12,display:"flex",flexDirection:"column",gap:8})},React.createElement("button",{onClick:(()=>togglePaid(s.id,true)),style:({...bSt(C.gr,"#000"),width:"100%",justifyContent:"center",padding:"12px",fontSize:14,fontWeight:800})},"✅ BAYAD NA —",(P(remaining))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("input",{type:"number",placeholder:("Partial na bayad (max "+P(remaining)+")"),style:({...iSt(),flex:1}),value:(partialAmt),onChange:(e=>setPartialAmt(String(+e.target.value||"")))}),React.createElement("button",{onClick:(()=>handlePartial(s)),style:({...bSt(C.am,"#000"),padding:"10px 14px",fontSize:12,fontWeight:700})},"Partial")))
                       )),(s.paid&&(
                         React.createElement("button",{onClick:(()=>togglePaid(s.id,false)),style:({...gBtn(),marginTop:10,color:C.re,width:"100%",justifyContent:"center"})},"↩ I-Utang ulit")
                       )))
@@ -1078,7 +1083,7 @@ if(!window.React || !window.ReactDOM) {
       const [orderMode,   setOrderMode]   = useState({}); // {pid: "pack"|"tingi"}
       const [customQty,   setCustomQty]   = useState({});
       const [showAddCustom,setShowAddCustom] = useState(false);
-      const [customItem,  setCustomItem]  = useState({name:"",qty:"",cost:"",srp:"",unit:"piraso",addToInv:true});
+      const [customItem,  setCustomItem]  = useState({name:"",qty:"",cost:"",srp:"",pcs:"",unit:"piraso",addToInv:true});
       const [customDone,  setCustomDone]  = useState([]);
 
       const getMode   = (p) => orderMode[p.id] || "pack";
@@ -1091,7 +1096,7 @@ if(!window.React || !window.ReactDOM) {
         if(!rawQty||rawQty<=0) return;
 
         // Convert to pieces depending on mode
-        const upp          = +p.piecesPerBuyingUnit || +p.unitsPerPack || 1;
+        const upp          = +p.unitsPerPack || 1;
         const piecesAdded  = mode==="tingi" ? rawQty : rawQty * upp;
         const costPerPiece = upp>1 ? +p.cost/upp : +p.cost;
         const totalCost    = mode==="tingi" ? costPerPiece*rawQty : +p.cost*rawQty;
@@ -1122,10 +1127,14 @@ if(!window.React || !window.ReactDOM) {
         const costPer = amt/Math.max(1,qty);
         if(customItem.addToInv) {
           if(srp<=0){ alert("⚠️ Lagyan ng Selling Price (SRP) para maibenta sa Quick Sale!"); return; }
+          const pcs_per_pack = +customItem.pcs||0;
           addProduct({
             name:customItem.name,sku:customItem.name.slice(0,3).toUpperCase()+"-"+Date.now().toString(36).slice(-3),
-            cat:"Iba pa",price:srp,cost:costPer,stock:qty,min:1,orderQty:qty,unit:customItem.unit,
-            variants:[],unitsPerPack:0,pricePerUnit:0
+            cat:"Iba pa",price:srp,cost:amt/Math.max(1,qty),
+            stock: pcs_per_pack>0 ? qty*pcs_per_pack : qty,
+            costPerPiece: pcs_per_pack>0 ? costPer/pcs_per_pack : costPer,
+            min:1,orderQty:qty,unit:customItem.unit,
+            variants:[],unitsPerPack:pcs_per_pack,pricePerUnit:pcs_per_pack>0?srp:0
           });
           // Record as stock purchase (not expense) to avoid double-counting
           DB.addStockPurchase({date:new Date().toISOString().slice(0,10),product:customItem.name,qty:qty,costPerUnit:costPer,totalCost:amt,note:"Reorder: "+qty+" "+customItem.unit});
@@ -1134,7 +1143,7 @@ if(!window.React || !window.ReactDOM) {
           addExpense({date:new Date().toISOString().slice(0,10),type:"Puhunan/Iba pa",amount:amt,note:customItem.name+" ("+qty+" "+customItem.unit+")"});
         }
         setCustomDone(d=>[...d,customItem.name+" ("+P(amt)+")"]);
-        setCustomItem({name:"",qty:"",cost:"",unit:"piraso",addToInv:true});
+        setCustomItem({name:"",qty:"",cost:"",srp:"",pcs:"",unit:"piraso",addToInv:true});
         setShowAddCustom(false);
       };
 
@@ -1143,7 +1152,7 @@ if(!window.React || !window.ReactDOM) {
 
       return (
         React.createElement("div",{style:(colStyle)},React.createElement(BackBtn,{setTab:(setTab)}),React.createElement("div",{style:({background:C.bg2,border:"1px solid "+C.bl,borderRadius:10,overflow:"hidden"})},React.createElement("div",{style:({padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"})},React.createElement("div",null,React.createElement("div",{style:({fontSize:13,fontWeight:700,color:"#fff"})},"➕ Dagdag na Binibili"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Hindi pa nasa listahan (Gasul, Ice, etc.)")),React.createElement("button",{style:({...bSt(C.bl,"#fff"),fontSize:12}),onClick:(()=>setShowAddCustom(o=>!o))},(showAddCustom?"✕ Isara":"+ Dagdag"))),(showAddCustom&&(
-              React.createElement("div",{style:({padding:"12px 14px",borderTop:"1px solid "+C.b,display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(customItem.name),onChange:(e=>setCustomItem(p=>({...p,name:e.target.value}))),placeholder:"e.g. Gasul, Ice..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Dami"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.qty),onChange:(e=>setCustomItem(p=>({...p,qty:e.target.value}))),placeholder:"1"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit"),React.createElement("select",{style:(iSt()),value:(customItem.unit),onChange:(e=>setCustomItem(p=>({...p,unit:e.target.value})))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Halaga / Gastos (₱) *"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.cost),onChange:(e=>setCustomItem(p=>({...p,cost:e.target.value}))),placeholder:"e.g. 850"}))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SELLING PRICE / SRP (₱)"),React.createElement("input",{type:"number",min:"0",placeholder:"Presyo sa customer (e.g. 1200)",style:(iSt()),value:(customItem.srp||""),onChange:(e=>setCustomItem(c=>({...c,srp:e.target.value})))}),React.createElement("div",{style:({fontSize:11,color:C.d2,marginTop:3})},(customItem.addToInv?"* Kailangan para maibenta sa Quick Sale":"Iwanan kung hindi para ibenta."))),React.createElement("div",{style:({display:"flex",alignItems:"center",gap:10,background:C.bg3,borderRadius:8,padding:"10px 12px",cursor:"pointer"}),onClick:(()=>setCustomItem(p=>({...p,addToInv:!p.addToInv})))},React.createElement("div",{style:({width:20,height:20,borderRadius:4,border:"2px solid "+(customItem.addToInv?C.gr:C.b2),background:customItem.addToInv?C.gr:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0})},(customItem.addToInv&&React.createElement("span",{style:({color:"#000",fontSize:13,fontWeight:800})},"✓"))),React.createElement("div",null,React.createElement("div",{style:({fontSize:12,fontWeight:700,color:"#fff"})},"Idagdag sa Inventory"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Para maibenta sa Quick Sale"))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(()=>setShowAddCustom(false))},"Cancel"),React.createElement("button",{style:({...bSt(C.gr,"#000"),flex:2}),onClick:(handleAddCustom)},"✅ I-Record")))
+              React.createElement("div",{style:({padding:"12px 14px",borderTop:"1px solid "+C.b,display:"flex",flexDirection:"column",gap:10})},React.createElement("div",{style:({display:"grid",gridTemplateColumns:"1fr 1fr",gap:10})},React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Pangalan *"),React.createElement("input",{style:(iSt()),value:(customItem.name),onChange:(e=>setCustomItem(p=>({...p,name:sanitizeName(e.target.value)}))),placeholder:"e.g. Gasul, Ice..."})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Dami"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.qty),onChange:(e=>setCustomItem(p=>({...p,qty:e.target.value}))),placeholder:"1"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Unit"),React.createElement("select",{style:(iSt()),value:(customItem.unit),onChange:(e=>setCustomItem(p=>({...p,unit:sanitizeName(e.target.value)})))},(TINGI_UNITS.map(u=>React.createElement("option",{key:(u.val),value:(u.val)},(u.label)))))),React.createElement("div",{style:({gridColumn:"1/-1"})},React.createElement("label",{style:(lbSt)},"Halaga / Gastos (₱) *"),React.createElement("input",{type:"number",style:(iSt()),value:(customItem.cost),onChange:(e=>setCustomItem(p=>({...p,cost:e.target.value}))),placeholder:"e.g. 850"}))),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"PIECES IN A PACK (optional)"),React.createElement("input",{type:"number",min:"1",placeholder:"e.g. 12 (pieces per case/pack)",style:(iSt()),value:(customItem.pcs||""),onChange:(e=>setCustomItem(c=>({...c,pcs:String(+e.target.value||"")})))}),React.createElement("div",{style:({fontSize:11,color:C.d2,marginTop:3})},"Ilan ang piraso sa isang pack/case?")),(+customItem.cost>0&&+customItem.qty>0&&+customItem.pcs>0)&&React.createElement("div",{style:({background:"linear-gradient(135deg,#071428,#071f17)",border:"1px solid "+C.bl,borderRadius:10,padding:"12px 14px"})},React.createElement("div",{style:({fontSize:11,fontWeight:700,color:C.d2,marginBottom:10,textTransform:"uppercase"})},"📊 Auto-Compute"),(function(){var totalPcs=+customItem.qty*(+customItem.pcs||1);var costPerPc=(+customItem.cost)/(totalPcs||1);var srp=+customItem.srp||0;var totalSRP=srp*totalPcs;var grossProfit=totalSRP-+customItem.cost;var margin=+customItem.cost>0?((grossProfit/totalSRP)*100):0;var rows=[["Total pieces",totalPcs+" pcs","#fff"],["Cost per piece",P(costPerPc),C.re],srp>0&&["SRP × pieces",totalPcs+"×"+P(srp)+" = "+P(totalSRP),C.am],srp>0&&["Gross profit",P(grossProfit),grossProfit>=0?C.gr:C.re],srp>0&&["Margin",margin.toFixed(1)+"%",margin>=20?C.gr:margin>=10?C.am:C.re]].filter(Boolean);return React.createElement("div",null,rows.map(function(r,i){return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:i<rows.length-1?"1px solid "+C.b:"none"}},React.createElement("span",{style:{fontSize:12,color:C.d2}},r[0]),React.createElement("span",{style:{fontSize:12,fontWeight:700,color:r[2]}},r[1]));}));})()),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"SELLING PRICE / SRP (₱)"),React.createElement("input",{type:"number",min:"0",placeholder:"Presyo sa customer (e.g. 1200)",style:(iSt()),value:(customItem.srp||""),onChange:(e=>setCustomItem(c=>({...c,srp:String(+e.target.value||"")})))}),React.createElement("div",{style:({fontSize:11,color:C.d2,marginTop:3})},(customItem.addToInv?"* Kailangan para maibenta sa Quick Sale":"Iwanan kung hindi para ibenta."))),React.createElement("div",{style:({display:"flex",alignItems:"center",gap:10,background:C.bg3,borderRadius:8,padding:"10px 12px",cursor:"pointer"}),onClick:(()=>setCustomItem(p=>({...p,addToInv:!p.addToInv})))},React.createElement("div",{style:({width:20,height:20,borderRadius:4,border:"2px solid "+(customItem.addToInv?C.gr:C.b2),background:customItem.addToInv?C.gr:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0})},(customItem.addToInv&&React.createElement("span",{style:({color:"#000",fontSize:13,fontWeight:800})},"✓"))),React.createElement("div",null,React.createElement("div",{style:({fontSize:12,fontWeight:700,color:"#fff"})},"Idagdag sa Inventory"),React.createElement("div",{style:({fontSize:11,color:C.d2})},"Para maibenta sa Quick Sale"))),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(()=>setShowAddCustom(false))},"Cancel"),React.createElement("button",{style:({...bSt(C.gr,"#000"),flex:2}),onClick:(handleAddCustom)},"✅ I-Record")))
             ))),(customDone.length>0&&customDone.map((d,i)=>(
             React.createElement("div",{key:(i),style:({background:C.gd,border:"1px solid "+C.gr+"40",borderRadius:8,padding:"8px 12px",fontSize:12,color:C.gr})},"✅",(d))
           ))),(active.length===0&&lowStock.length>0 ? (
@@ -1169,7 +1178,7 @@ if(!window.React || !window.ReactDOM) {
                             fontSize:12,fontWeight:mode==="pack"?700:400,cursor:"pointer"})},"📦 Order by",(packNm)),React.createElement("button",{onClick:(()=>setOrderMode(m=>({...m,[p.id]:"tingi"}))),style:({flex:1,padding:"7px",borderRadius:8,border:"1px solid "+(mode==="tingi"?C.am:C.b2),
                             background:mode==="tingi"?C.ad:"transparent",color:mode==="tingi"?C.am:C.d2,
                             fontSize:12,fontWeight:mode==="tingi"?700:400,cursor:"pointer"})},"✂️ Order by",(tingiNm)))
-                    )),React.createElement("div",{style:({display:"flex",gap:8,alignItems:"center",marginBottom:6})},React.createElement("div",{style:({fontSize:12,color:C.d2,flexShrink:0})},"Order:"),React.createElement("input",{type:"number",min:"1",value:(customQty[p.id]!==undefined?customQty[p.id]:p.orderQty),onChange:(e=>setCustomQty(q=>({...q,[p.id]:e.target.value}))),style:({...iSt(),flex:1,padding:"8px 10px",fontSize:14})}),React.createElement("span",{style:({fontSize:12,color:C.d2,flexShrink:0})},(mode==="pack"?packNm:tingiNm)),React.createElement("button",{onClick:(()=>handleRestock(p)),style:({...bSt(C.gr,"#000"),padding:"10px 14px",fontSize:13,fontWeight:800,flexShrink:0})},"✓ Na-stock")),React.createElement("div",{style:({background:C.bg3,borderRadius:6,padding:"7px 10px",fontSize:11,color:C.d2})},(mode==="pack"
+                    )),React.createElement("div",{style:({display:"flex",gap:8,alignItems:"center",marginBottom:6})},React.createElement("div",{style:({fontSize:12,color:C.d2,flexShrink:0})},"Order:"),React.createElement("input",{type:"number",min:"1",value:(customQty[p.id]!==undefined?customQty[p.id]:p.orderQty),onChange:(e=>setCustomQty(q=>({...q,[p.id]:String(+e.target.value||"")}))),style:({...iSt(),flex:1,padding:"8px 10px",fontSize:14})}),React.createElement("span",{style:({fontSize:12,color:C.d2,flexShrink:0})},(mode==="pack"?packNm:tingiNm)),React.createElement("button",{onClick:(()=>handleRestock(p)),style:({...bSt(C.gr,"#000"),padding:"10px 14px",fontSize:13,fontWeight:800,flexShrink:0})},"✓ Na-stock")),React.createElement("div",{style:({background:C.bg3,borderRadius:6,padding:"7px 10px",fontSize:11,color:C.d2})},(mode==="pack"
                         ? React.createElement("span",null,(rawQty),(packNm),"×",(p.unitsPerPack||1),(tingiNm),"=",React.createElement("strong",{style:({color:"#fff"})},(piecesWillAdd),(tingiNm)),"madadagdag · Est:",React.createElement("strong",{style:({color:C.am})},(P(estCost))))
                         : React.createElement("span",null,(rawQty),(tingiNm),"madadagdag · Est:",React.createElement("strong",{style:({color:C.am})},(P(estCost)))))))
                 );
@@ -1258,7 +1267,7 @@ if(!window.React || !window.ReactDOM) {
           const prod=products.find(p=>p.id===it.pid||p.id===Number(it.pid));
           if(!prod||!+prod.cost) return b;
           const ppu=+prod.pricePerUnit, upp=+prod.unitsPerPack;
-          const soldAsTingi = ppu>0&&upp>0&&Math.abs(+it.price-ppu)<0.01;
+          const soldAsTingi = it.isTingi===true||(it.isTingi==null&&ppu>0&&upp>0&&Math.abs(+it.price-ppu)<0.02);
           const cpu = soldAsTingi ? +prod.cost/upp : +prod.cost;
           return b+(cpu*+it.qty);
         },0),0);
@@ -1291,7 +1300,7 @@ if(!window.React || !window.ReactDOM) {
             expenses: fe,
             summary:{
               totalSalesPaid: income,
-              totalUnpaid: fs.filter(s=>!s.paid).reduce((a,s)=>a+s.total,0),
+              totalUnpaid: fs.filter(s=>!s.paid).reduce((a,s)=>a+(s.items||[]).reduce((b,it)=>b+(+it.price*+it.qty),0),0),
               totalExpenses: exp,
               netProfit: profit,
               totalTransactions: fs.length,
@@ -1312,7 +1321,7 @@ if(!window.React || !window.ReactDOM) {
         React.createElement("div",{style:(colStyle)},React.createElement(BackBtn,{setTab:(setTab)}),(!DB.get("bb4_gsheet_url","") && (
             React.createElement("div",{style:({background:"#0a1628",border:`1px solid ${C.bl}`,borderRadius:10,padding:"12px 14px",display:"flex",gap:10,alignItems:"center"})},React.createElement("span",{style:({fontSize:22})},"📊"),React.createElement("div",{style:({flex:1})},React.createElement("div",{style:({fontSize:13,fontWeight:700,color:C.bl})},"I-setup ang Google Sheets"),React.createElement("div",{style:({fontSize:11,color:C.d2,marginTop:2})},"I-send ang reports sa inyong Google Sheets para makita ng owner")),React.createElement("button",{style:({...bSt(C.bl,"#fff"),fontSize:11,padding:"6px 12px"}),onClick:(()=>setShowSetup(true))},"Setup →"))
           )),(sendStatus==="ok"    && React.createElement("div",{style:({background:"#071f17",border:`1px solid ${C.gr}`,borderRadius:8,padding:"10px 14px",color:C.gr,fontWeight:700,fontSize:13})},"✅ Na-send na sa Google Sheets! Tingnan mo na ang spreadsheet.")),(sendStatus==="error" && React.createElement("div",{style:({background:C.rd,border:`1px solid ${C.re}`,borderRadius:8,padding:"10px 14px",color:C.re,fontWeight:700,fontSize:13})},"❌ Hindi na-send. I-check ang webhook URL sa Settings.")),(sendStatus==="saved" && React.createElement("div",{style:({background:"#071f17",border:`1px solid ${C.gr}`,borderRadius:8,padding:"10px 14px",color:C.gr,fontWeight:700,fontSize:13})},"✅ Na-save ang settings!")),(showSetup && (
-            React.createElement("div",{style:({background:C.bg2,border:`1px solid ${C.bl}`,borderRadius:12,padding:"16px"})},React.createElement("div",{style:({fontSize:14,fontWeight:800,color:"#fff",marginBottom:4})},"📊 Google Sheets Setup"),React.createElement("div",{style:({fontSize:11,color:C.d2,marginBottom:14,lineHeight:1.7})},"1. Buksan ang Google Sheets",React.createElement("br",null),"2. Extensions → Apps Script",React.createElement("br",null),"3. I-paste ang script → I-deploy as Web App",React.createElement("br",null),"4. I-copy ang Web App URL → I-paste dito"),React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Store Name"),React.createElement("input",{style:(iSt()),value:(storeName),onChange:(e=>setStoreName(e.target.value)),placeholder:"e.g. Aling Nena Store"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Google Sheets Webhook URL"),React.createElement("input",{style:(iSt()),value:(webhookUrl),onChange:(e=>setWebhookUrl(e.target.value)),placeholder:"https://script.google.com/macros/s/..."})),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(()=>setShowSetup(false))},"Kanselahin"),React.createElement("button",{style:({...bSt(),flex:2}),onClick:(saveSettings)},"💾 I-save"))))
+            React.createElement("div",{style:({background:C.bg2,border:`1px solid ${C.bl}`,borderRadius:12,padding:"16px"})},React.createElement("div",{style:({fontSize:14,fontWeight:800,color:"#fff",marginBottom:4})},"📊 Google Sheets Setup"),React.createElement("div",{style:({fontSize:11,color:C.d2,marginBottom:14,lineHeight:1.7})},"1. Buksan ang Google Sheets",React.createElement("br",null),"2. Extensions → Apps Script",React.createElement("br",null),"3. I-paste ang script → I-deploy as Web App",React.createElement("br",null),"4. I-copy ang Web App URL → I-paste dito"),React.createElement("div",{style:({display:"flex",flexDirection:"column",gap:10})},React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Store Name"),React.createElement("input",{style:(iSt()),value:(storeName),onChange:(e=>setStoreName(sanitizeName(e.target.value))),placeholder:"e.g. Aling Nena Store"})),React.createElement("div",null,React.createElement("label",{style:(lbSt)},"Google Sheets Webhook URL"),React.createElement("input",{style:(iSt()),value:(webhookUrl),onChange:(e=>setWebhookUrl(sanitizeText(e.target.value, 300))),placeholder:"https://script.google.com/macros/s/..."})),React.createElement("div",{style:({display:"flex",gap:8})},React.createElement("button",{style:({...gBtn(),flex:1}),onClick:(()=>setShowSetup(false))},"Kanselahin"),React.createElement("button",{style:({...bSt(),flex:2}),onClick:(saveSettings)},"💾 I-save"))))
           )),React.createElement("div",{style:({display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"})},(["daily","weekly","monthly"].map(v=>React.createElement("button",{key:(v),style:(period===v?bSt():gBtn()),onClick:(()=>setPeriod(v))},(v==="daily"?t.daily:v==="weekly"?t.weekly:t.monthly)))),React.createElement("span",{style:({fontSize:11,color:C.d2,fontWeight:600})},(label))),React.createElement("div",{style:({display:"flex",gap:8,alignItems:"center",background:C.bg2,border:"1px solid "+C.b,borderRadius:8,padding:"8px 12px"})},React.createElement("span",{style:({fontSize:11,color:C.d2,flexShrink:0})},"📅 Custom:"),React.createElement("input",{type:"date",style:({...iSt(),flex:1,padding:"5px 8px",fontSize:12}),value:(customFrom),onChange:(e=>setCustomFrom(e.target.value))}),React.createElement("span",{style:({color:C.d2,fontSize:12})},"–"),React.createElement("input",{type:"date",style:({...iSt(),flex:1,padding:"5px 8px",fontSize:12}),value:(customTo),onChange:(e=>setCustomTo(e.target.value))}),((customFrom||customTo)&&React.createElement("button",{style:({...gBtn(),fontSize:11,padding:"4px 8px",color:C.re}),onClick:(()=>{setCustomFrom("");setCustomTo("");})},"✕"))),React.createElement(Grid2,null,React.createElement(StatCard,{v:(P(income)),label:"Total Sales",sub:(fs.filter(s=>s.paid).length+" txn"),color:(C.cy),icon:"💰"}),React.createElement(StatCard,{v:(P(cogs)),label:"COGS",sub:"Cost of goods sold",color:(C.re),icon:"📦"}),React.createElement(StatCard,{v:(P(grossProfit)),label:"Gross Profit",sub:"Sales − COGS",color:(C.am),icon:"📊"}),React.createElement(StatCard,{v:(P(exp)),label:"Expenses",sub:(fe.length+" operating items"),color:(C.re),icon:"🧾"})),React.createElement("div",{style:({background:profit>=0?"linear-gradient(135deg,#071f17,#071428)":"linear-gradient(135deg,#2a0a0a,#1a0a0a)",
             border:"2px solid "+(profit>=0?C.gr:C.re),borderRadius:12,padding:"14px 16px",
             display:"flex",justifyContent:"space-between",alignItems:"center"})},React.createElement("div",null,React.createElement("div",{style:({fontSize:12,fontWeight:800,color:profit>=0?C.gr:C.re})},"📈 NET PROFIT"),React.createElement("div",{style:({fontSize:11,color:C.d2,marginTop:3})},"Gross Profit (",(P(grossProfit)),") − Expenses (",(P(exp)),")")),React.createElement("div",{style:({fontSize:28,fontWeight:900,color:profit>=0?C.gr:C.re})},(P(profit)))),React.createElement("button",{onClick:(sendReport),disabled:(sending),style:({...bSt("#0f9d58","#fff"),width:"100%",justifyContent:"center",padding:"14px",fontSize:15,fontWeight:800,opacity:sending?0.6:1,border:"none",borderRadius:10})},(sending ? "📤 Nagpapadala..." : "📊 I-SEND SA GOOGLE SHEETS")),(DB.get("bb4_store_name","") && React.createElement("div",{style:({textAlign:"center",fontSize:11,color:C.d2,marginTop:-6})},"Store:",React.createElement("strong",{style:({color:"#fff"})},(DB.get("bb4_store_name",""))),"· Period:",(label))),React.createElement(Card,{title:"📊 Profit Breakdown"},React.createElement("div",{style:({padding:"14px"})},([
@@ -1341,7 +1350,7 @@ if(!window.React || !window.ReactDOM) {
       const doUpload=async e=>{try{const txt=await e.target.files[0].text();const p=JSON.parse(txt);setConfirm({data:p.data||p,label:p.label||e.target.files[0].name});}catch{fail("Invalid file.");}e.target.value="";};
       const doRestore=()=>{restoreData(confirm.data);setConfirm(null);ok("Data restored! I-refresh kung kailangan.");};
       return (
-        React.createElement("div",{style:(colStyle)},(status && React.createElement(AlertBar,{c:(status.startsWith("✅")?"green":"red")},(status))),React.createElement(Grid2,null,React.createElement(StatCard,{v:(DB.sizeKB()+" KB"),label:"Storage",sub:"",color:(C.bl),icon:"💿"}),React.createElement(StatCard,{v:(autoList.length),label:"Auto Backups",sub:"48 max",color:(C.gr),icon:"🤖"}),React.createElement(StatCard,{v:(manList.length),label:"Manual",sub:"30 max",color:(C.pu),icon:"👤"}),React.createElement(StatCard,{v:(DB.get("last_ab",null)?new Date(DB.get("last_ab")).toLocaleTimeString("en-PH"):"None"),label:"Last Auto",sub:"",color:(C.am),icon:"⏱️"})),React.createElement(Card,{title:"💾 Gumawa ng Backup"},React.createElement("div",{style:({padding:"12px 14px",display:"flex",flexDirection:"column",gap:8})},React.createElement("div",{style:({display:"flex",gap:8,flexWrap:"wrap"})},React.createElement("input",{style:({...iSt(),flex:1,minWidth:140}),placeholder:"Label (optional)",value:(label),onChange:(e=>setLabel(e.target.value))}),React.createElement("button",{style:(bSt()),onClick:(doManual)},"💾",(t.bkNow))),React.createElement("button",{style:(gBtn()),onClick:(()=>fileRef.current&&fileRef.current.click())},"📂",(t.restoreFile)),React.createElement("input",{ref:(fileRef),type:"file",accept:".json",style:({display:"none"}),onChange:(doUpload)}))),React.createElement(Card,null,React.createElement("div",{style:({display:"flex",borderBottom:`1px solid ${C.b}`})},([{id:"auto",l:`🤖 Auto (${autoList.length})`},{id:"man",l:`👤 Manual (${manList.length})`}].map(tb=>(
+        React.createElement("div",{style:(colStyle)},(status && React.createElement(AlertBar,{c:(status.startsWith("✅")?"green":"red")},(status))),React.createElement(Grid2,null,React.createElement(StatCard,{v:(DB.sizeKB()+" KB"),label:"Storage",sub:"",color:(C.bl),icon:"💿"}),React.createElement(StatCard,{v:(autoList.length),label:"Auto Backups",sub:"48 max",color:(C.gr),icon:"🤖"}),React.createElement(StatCard,{v:(manList.length),label:"Manual",sub:"30 max",color:(C.pu),icon:"👤"}),React.createElement(StatCard,{v:(DB.get("last_ab",null)?new Date(DB.get("last_ab")).toLocaleTimeString("en-PH"):"None"),label:"Last Auto",sub:"",color:(C.am),icon:"⏱️"})),React.createElement(Card,{title:"💾 Gumawa ng Backup"},React.createElement("div",{style:({padding:"12px 14px",display:"flex",flexDirection:"column",gap:8})},React.createElement("div",{style:({display:"flex",gap:8,flexWrap:"wrap"})},React.createElement("input",{style:({...iSt(),flex:1,minWidth:140}),placeholder:"Label (optional)",value:(label),onChange:(e=>setLabel(sanitizeNote(e.target.value)))}),React.createElement("button",{style:(bSt()),onClick:(doManual)},"💾",(t.bkNow))),React.createElement("button",{style:(gBtn()),onClick:(()=>fileRef.current&&fileRef.current.click())},"📂",(t.restoreFile)),React.createElement("input",{ref:(fileRef),type:"file",accept:".json",style:({display:"none"}),onChange:(doUpload)}))),React.createElement(Card,null,React.createElement("div",{style:({display:"flex",borderBottom:`1px solid ${C.b}`})},([{id:"auto",l:`🤖 Auto (${autoList.length})`},{id:"man",l:`👤 Manual (${manList.length})`}].map(tb=>(
                 React.createElement("button",{key:(tb.id),onClick:(()=>setATab(tb.id)),style:({flex:1,padding:"10px",background:activeTab===tb.id?C.bg3:"transparent",border:"none",borderBottom:activeTab===tb.id?`2px solid ${C.bl}`:"2px solid transparent",color:activeTab===tb.id?"#fff":C.d2,fontSize:12,fontWeight:activeTab===tb.id?700:400,cursor:"pointer"})},(tb.l))
               )))),((activeTab==="auto"?autoList:manList).slice(0,8).map((b,i,arr)=>(
               React.createElement("div",{key:(b.id),style:({padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${C.b}`:"none",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"})},React.createElement("div",{style:({flex:1,minWidth:150})},React.createElement("div",{style:({fontSize:12,fontWeight:700,color:"#fff"})},(b.label||new Date(b.ts).toLocaleString("en-PH"))),React.createElement("div",{style:({fontSize:10,color:C.d3})},(b.kb),"KB")),React.createElement("div",{style:({display:"flex",gap:5})},React.createElement("button",{style:({...gBtn(),fontSize:11}),onClick:(()=>DB.download(b))},"⬇️"),React.createElement("button",{style:({...gBtn(),fontSize:11,color:C.am}),onClick:(()=>setConfirm({data:b.data,label:b.label||"Auto backup"}))},"🔄")))
@@ -1388,7 +1397,7 @@ if(!window.React || !window.ReactDOM) {
     function DailySummary({sales,expenses}) {
       const today=new Date().toISOString().slice(0,10);
       const ts=sales.filter(s=>s.date===today);
-      const rev=ts.filter(s=>s.paid).reduce((a,s)=>a+s.total,0);
+      const rev=ts.filter(s=>s.paid).reduce((a,s)=>a+(s.items||[]).reduce((b,it)=>b+(+it.price*+it.qty),0),0);
       const exp=expenses.filter(e=>e.date===today).reduce((a,e)=>a+e.amount,0);
       const profit=rev-exp;
       const hr=new Date().getHours();
@@ -1505,7 +1514,7 @@ if(!window.React || !window.ReactDOM) {
       useEffect(()=>{DB.set("lang",lang);},[lang]);
       useEffect(()=>{
         const run=()=>DB.autoBackup();
-        const id=setInterval(run,30*60*1000);
+        const id=setInterval(run,30*60*1000); return ()=>{ clearInterval(id); window.removeEventListener("beforeunload",run); };
         window.addEventListener("beforeunload",run);
         return()=>{clearInterval(id);window.removeEventListener("beforeunload",run);};
       },[]);
@@ -1538,16 +1547,6 @@ if(!window.React || !window.ReactDOM) {
   }, 800);
 
 })(window.React, window.ReactDOM);
-} // end React guard
-} catch(e) {
-  var sub = document.getElementById('splash-sub');
-  if(sub) {
-    sub.textContent = 'Error: ' + e.message;
-    sub.style.color = '#ff6b6b';
-    sub.style.fontSize = '13px';
-  }
-  console.error('BantayBenta crash:', e);
-}
   </script>
 </body>
 </html>
